@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">WiBean</string>
+
+    <string name="action_reset">RESET</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="title_takeControl">Take Control</string>
+    <string name="title_brewingprogram_list">Brewing Programs</string>
+    <string name="title_wakeAlarm">Automatic Pre-Heat</string>
+    <string name="title_brewingprogram_detail">BrewingProgram Detail</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="heading_in_control_true">We have control!</string>
+    <string name="heading_in_control_false">Quietly waiting...</string>
+
+</resources>

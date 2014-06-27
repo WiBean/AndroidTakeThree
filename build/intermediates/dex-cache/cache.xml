@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pre-dex-items>
+
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBean\TestEditPrograms\build\intermediates\pre-dexed\debug\support-v4-19.1.0-b186bc94d828970fdf9a443b7b330facab2fa14d.jar"
+        jar="C:\Users\John-Michael\AppData\Local\Android\android-studio\sdk\extras\android\m2repository\com\android\support\support-v4\19.1.0\support-v4-19.1.0.jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="85f201b380937e61a9dce6ca90ccf6872abbfb67"/>
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBean\TestEditPrograms\build\intermediates\pre-dexed\debug\ion-1.2.4-10ae35ae51c6801fc3eb865ace52b80ae76ce2db.jar"
+        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.koushikdutta.ion\ion\1.2.4\776baf5cac8eb4145dc0901254122cf956a784e3\ion-1.2.4.jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="776baf5cac8eb4145dc0901254122cf956a784e3"/>
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBean\TestEditPrograms\build\intermediates\pre-dexed\debug\okhttp-2.0.0-93a0ce5ccff7b4a07903547f9c5842d1d44ae77c.jar"
+        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.squareup.okhttp\okhttp\2.0.0\4c8d1536dba3812cc1592090dc20c47a4ed3c35e\okhttp-2.0.0.jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="4c8d1536dba3812cc1592090dc20c47a4ed3c35e"/>
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBean\TestEditPrograms\build\intermediates\pre-dexed\debug\okio-1.0.0-bdf8a6192e3e78da1a0e644ffebf00d26711656d.jar"
+        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.squareup.okio\okio\1.0.0\2534c458682c73f5b9871131ab3098d3f987ca3\okio-1.0.0.jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="02534c458682c73f5b9871131ab3098d3f987ca3"/>
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBean\TestEditPrograms\build\intermediates\pre-dexed\debug\gson-2.2.4-69ab64174618a1d3d6bc835427cfb77d209e6584.jar"
+        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.google.code.gson\gson\2.2.4\a60a5e993c98c864010053cb901b7eab25306568\gson-2.2.4.jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="a60a5e993c98c864010053cb901b7eab25306568"/>
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBean\TestEditPrograms\build\intermediates\pre-dexed\debug\androidasync-1.2.4-c1068bfb54a086a038f9bafde9987ecdab99276f.jar"
+        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.koushikdutta.async\androidasync\1.2.4\8dc7111050ee5f13a54b1206d47fee856159b2aa\androidasync-1.2.4.jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="8dc7111050ee5f13a54b1206d47fee856159b2aa"/>
+
+</pre-dex-items>
