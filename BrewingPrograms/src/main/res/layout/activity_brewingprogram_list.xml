@@ -5,7 +5,7 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.jmnow.wibean.testeditprograms.BrewingProgramListActivity">
+    tools:context="com.jmnow.wibeantakethree.brewingprograms.BrewingProgramListActivity">
     <RelativeLayout
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
@@ -75,8 +75,9 @@
         android:layout_width="@dimen/navigation_drawer_width"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:name="com.jmnow.wibean.testeditprograms.NavigationDrawerFragment"
+        android:name="com.jmnow.wibeantakethree.brewingprograms.NavigationDrawerFragment"
         tools:layout="@layout/fragment_navigation_drawer" />
+
 
 </android.support.v4.widget.DrawerLayout>
 

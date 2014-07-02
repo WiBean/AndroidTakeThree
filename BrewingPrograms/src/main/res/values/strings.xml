@@ -17,4 +17,13 @@
     <string name="heading_in_control_true">We have control!</string>
     <string name="heading_in_control_false">Quietly waiting...</string>
 
+    <string name="loading_message">Working, please wait...</string>
+
+    <string name="label_ip_address">WiBean IP: </string>
+    <string name="hint_ip_address">192.168.1.107</string>
+    <string name="dialog_ip_error_message">Could not connect to the WiBean.\n
+            Please check the IP address.\n
+            Note: IPV6 is not supported.</string>
+    <string name="dialog_ip_error_title">Connection Error</string>
+
 </resources>

@@ -23,7 +23,7 @@
 
     <fragment
         android:id="@+id/brewingprogram_list"
-        android:name="com.jmnow.wibean.testeditprograms.BrewingProgramListFragment"
+        android:name="com.jmnow.wibeantakethree.brewingprograms.BrewingProgramListFragment"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"

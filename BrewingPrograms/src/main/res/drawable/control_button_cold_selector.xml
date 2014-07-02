@@ -3,6 +3,6 @@
     <item android:state_pressed="true"
         android:drawable="@drawable/red_mug_hi" /> <!-- pressed -->
     <item android:state_focused="true"
-        android:drawable="@drawable/red_mug_hi" /> <!-- focused -->
+        android:drawable="@drawable/miel_blue_cup_hi" /> <!-- focused -->
     <item android:drawable="@drawable/miel_blue_cup_hi" /> <!-- default -->
 </selector>

@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/TestEditPrograms/TestEditPrograms.iml" filepath="$PROJECT_DIR$/TestEditPrograms/TestEditPrograms.iml" />
-      <module fileurl="file://$PROJECT_DIR$/WiBean.iml" filepath="$PROJECT_DIR$/WiBean.iml" />
+      <module fileurl="file://$PROJECT_DIR$/BrewingPrograms/BrewingPrograms.iml" filepath="$PROJECT_DIR$/BrewingPrograms/BrewingPrograms.iml" />
+      <module fileurl="file://$PROJECT_DIR$/WiBeanTakeThree.iml" filepath="$PROJECT_DIR$/WiBeanTakeThree.iml" />
     </modules>
   </component>
 </project>

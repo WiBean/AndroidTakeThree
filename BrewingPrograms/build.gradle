@@ -5,12 +5,12 @@ android {
     compileSdkVersion 19
     buildToolsVersion '19.1.0'
     defaultConfig {
-        packageName "com.jmnow.wibean.testeditprograms"
+        packageName "com.jmnow.wibeantakethree.brewingprograms"
         minSdkVersion 16
         targetSdkVersion 19
         versionCode 1
         versionName '1.0'
-        applicationId 'com.jmnow.wibean.testeditprograms'
+        applicationId 'com.jmnow.wibeantakethree.brewingprograms'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_7

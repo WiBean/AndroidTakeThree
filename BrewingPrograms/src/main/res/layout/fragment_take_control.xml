@@ -1,0 +1,41 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.jmnow.wibeantakethree.brewingprograms.TakeControlFragment"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical">
+        <Button
+            android:id="@+id/btnTakeControl"
+            android:onClick="btnTakeControl_onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableTop="@drawable/control_button_cold_selector"
+            android:text="@string/heading_in_control_false"/>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_ip_address"
+                android:labelFor="@+id/etIpAddress"/>
+            <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/etIpAddress"
+                android:singleLine="true"
+                android:hint="@string/hint_ip_address"
+                android:maxLength="15"/>
+            </LinearLayout>
+
+    </LinearLayout>
+
+
+</FrameLayout>
