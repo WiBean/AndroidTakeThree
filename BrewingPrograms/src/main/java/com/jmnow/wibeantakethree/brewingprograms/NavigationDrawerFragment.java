@@ -2,11 +2,10 @@ package com.jmnow.wibeantakethree.brewingprograms;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.net.Uri;
 import android.os.Bundle;
-import android.app.Fragment;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
@@ -18,15 +17,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Switch;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import com.koushikdutta.async.future.FutureCallback;
-import com.koushikdutta.ion.Ion;
-import com.koushikdutta.ion.Response;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation drawer.
@@ -41,20 +33,13 @@ public class NavigationDrawerFragment extends Fragment {
     private static final String PREF_USER_LEARNED_DRAWER = "navigation_drawer_learned";
     // pointer for where the callbacks go (the Activity)
     private NavigationDrawerCallbacks mCallbacks;
-    public static interface NavigationDrawerCallbacks {
-        // when an item is selected
-        void onNavigationDrawerItemSelected(int position);
-    }
-
     /**
      * Helper component that ties the action bar to the navigation drawer.
      */
     private ActionBarDrawerToggle mDrawerToggle;
-
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerListView;
     private View mFragmentContainerView;
-
     private int mCurrentSelectedPosition = 0;
     private boolean mFromSavedInstanceState;
     private boolean mUserLearnedDrawer;
@@ -71,15 +56,14 @@ public class NavigationDrawerFragment extends Fragment {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
         mUserLearnedDrawer = sp.getBoolean(PREF_USER_LEARNED_DRAWER, false);
 
-        if( savedInstanceState != null ) {
+        if (savedInstanceState != null) {
             mCurrentSelectedPosition = savedInstanceState.getInt(STATE_SELECTED_POSITION);
             mFromSavedInstanceState = true;
         }
-        selectItem(mCurrentSelectedPosition);
     }
 
     @Override
-    public void onActivityCreated (Bundle savedInstanceState) {
+    public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         // Indicate that this fragment would like to influence the set of actions in the action bar.
         setHasOptionsMenu(true);
@@ -105,9 +89,16 @@ public class NavigationDrawerFragment extends Fragment {
                         "Control",
                         "Brew",
                         "Pre-Heat",
-                }));
-        mDrawerListView.setItemChecked(mCurrentSelectedPosition,true);
+                }
+        ));
+        mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
         return mDrawerListView;
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        selectItem(mCurrentSelectedPosition);
     }
 
     @Override
@@ -119,6 +110,7 @@ public class NavigationDrawerFragment extends Fragment {
             throw new ClassCastException("Activity must implement NavigationDrawerCallbacks.");
         }
     }
+
     @Override
     public void onDetach() {
         super.onDetach();
@@ -179,7 +171,6 @@ public class NavigationDrawerFragment extends Fragment {
                 if (!isAdded()) {
                     return;
                 }
-
                 if (!mUserLearnedDrawer) {
                     // The user manually opened the drawer; store this flag to prevent auto-showing
                     // the navigation drawer automatically in the future.
@@ -188,7 +179,6 @@ public class NavigationDrawerFragment extends Fragment {
                             .getDefaultSharedPreferences(getActivity());
                     sp.edit().putBoolean(PREF_USER_LEARNED_DRAWER, true).apply();
                 }
-
                 getActivity().invalidateOptionsMenu(); // calls onPrepareOptionsMenu()
             }
         };
@@ -230,60 +220,18 @@ public class NavigationDrawerFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        boolean success = super.onOptionsItemSelected(item);
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
         if (item.getItemId() == R.id.action_reset) {
-            Toast.makeText(getActivity(), "RESET SENT", Toast.LENGTH_SHORT).show();
-            //return true;
-        }
-        /*
-        // SEND RESET REQUEST
-        TextView responseText = (TextView) getActivity().findViewById(R.id.tv_responseText);
-        EditText targetIpText = (EditText) getActivity().findViewById(R.id.et_targetIp);
-        try {
-            // launch HTTP request async
-            // do we have a context?
-            Activity v = getActivity();
-            if( v==null) {
-                System.out.println("v is null?");
-                return false;
+            if (mCallbacks.onResetSelected()) {
+                Toast.makeText(getActivity(), "Reset Success.", Toast.LENGTH_LONG);
+            } else {
+                Toast.makeText(getActivity(), "Reset Failed!\nAlready reset?", Toast.LENGTH_LONG);
             }
-            Ion.with(v)
-                    .load("http://" + targetIpText.getText().toString() + "/arduino/reset/0")
-                    .setTimeout(10000) // in ms
-                    .asString()
-                    .withResponse()
-                    .setCallback(new FutureCallback<Response<String>>() {
-                        @Override
-                        public void onCompleted(Exception e, Response<String> result) {
-                            // update the status box
-                            TextView responseText = (TextView) getActivity().findViewById(R.id.tv_responseText);
-                            if( e != null) {
-                                //we have a problem
-                                responseText.setText("ERR reset: " + e.getMessage() + ' ' + e.getClass());
-                            }
-                            else {
-                                // print the response code, ie, 200
-                                System.out.println(result.getHeaders().getResponseCode());
-                                if( result.getResult().startsWith("RESET REQUESTED!")) {
-                                    responseText.setText("RESET SUCCESS!");
-                                    ((Switch)getActivity().findViewById(R.id.sw_heatingControlled)).setChecked(false);
-                                    ((Switch)getActivity().findViewById(R.id.sw_heatingOn)).setChecked(false);
-                                }
-                                else {
-                                    responseText.setText("RESET ERR! Resp: " + result.getResult());
-                                }
-                            }
-                        }
-                    });
-
         }
-        catch (Exception e) {
-            responseText.setText("Err chk IP: " + e.getMessage() + ' ' + e.getClass());
-        }
-        */
-        return super.onOptionsItemSelected(item);
+        return success;
     }
 
     /**
@@ -295,5 +243,15 @@ public class NavigationDrawerFragment extends Fragment {
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setTitle(R.string.app_name);
+    }
+
+    public static interface NavigationDrawerCallbacks {
+        // when an item is selected
+        void onNavigationDrawerItemSelected(int position);
+
+        // if they click the reset button
+        boolean onResetSelected();
+        // if they select settings
+        // do stuff;
     }
 }

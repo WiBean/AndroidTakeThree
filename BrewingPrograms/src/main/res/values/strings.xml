@@ -2,8 +2,12 @@
 <resources>
 
     <string name="app_name">WiBean</string>
+
     <string name="action_reset">RESET</string>
     <string name="action_settings">Settings</string>
+    <string name="action_brew">Brew!</string>
+    <string name="action_take_control">Take Control!</string>
+    <string name="action_release_control">Release Control!</string>
 
     <string name="title_takeControl">Take Control</string>
     <string name="title_brewingprogram_list">Brewing Programs</string>
@@ -14,7 +18,7 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="heading_in_control_true">We have control!</string>
-    <string name="heading_in_control_false">Quietly waiting...</string>
+    <string name="heading_in_control_false">Uncontrolled</string>
 
     <string name="loading_message">Working, please wait...</string>
     <string name="label_ip_address">WiBean IP: </string>

@@ -6,13 +6,4 @@
         android:actionProviderClass="android.widget.ShareActionProvider"
         android:showAsAction="always"
         android:title="Share" />
-    <item
-        android:id="@+id/action_reset"
-        android:showAsAction="withText|ifRoom"
-        android:title="@string/action_reset" />
-    <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:showAsAction="never"
-        android:title="@string/action_settings" />
 </menu>

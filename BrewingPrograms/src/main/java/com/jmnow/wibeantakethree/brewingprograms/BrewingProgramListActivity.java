@@ -1,19 +1,21 @@
 package com.jmnow.wibeantakethree.brewingprograms;
 
 import android.app.ActionBar;
+import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.app.Activity;
 import android.os.Handler;
 import android.support.v4.widget.DrawerLayout;
 import android.view.Menu;
+import android.widget.TextView;
 
+import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgram;
+import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanYunState;
 import com.squareup.okhttp.OkHttpClient;
 
 /**
@@ -36,8 +38,8 @@ public class BrewingProgramListActivity extends Activity
         implements BrewingProgramListFragment.Callbacks,
         NavigationDrawerFragment.NavigationDrawerCallbacks,
         TakeControlFragment.TakeControlFragmentListener,
-        AlarmFragment.WiBeanAlarmFragmentInteractionListener
-{
+        AlarmFragment.WiBeanAlarmFragmentInteractionListener,
+        BrewingProgramDetailFragment.BrewingProgramDetailCallbacks {
 
      /**
       * FRAGMENT IDENTIFIERS
@@ -46,23 +48,20 @@ public class BrewingProgramListActivity extends Activity
     private static final String TAG_BREWINGPROGRAMLIST = "fragment_brewingProgramList";
     private static final String TAG_ALARM = "fragment_alarm";
     private static final String TAG_BREWINGPROGRAMDETAIL = "fragment_brewingProgramDetail";
-
-
+    // httpClient, make one to save resources
+    OkHttpClient mHttpClient;
      /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
     private NavigationDrawerFragment mNavigationDrawerFragment;
-
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
      * device.
      */
     private boolean mTwoPane;
-    // httpClient, make one to save resources
-    OkHttpClient mHttpClient;
     // title shows above
     private CharSequence mTitle;
-    // Handler allows us to run actions on the GUI thread
+    // Handler allows us to run actions on the GUI thread, and post delayed events
     private Handler mHandler = new Handler();
     // used to store pointer to a progress dialog
     private ProgressDialog mProgess;
@@ -181,16 +180,17 @@ public class BrewingProgramListActivity extends Activity
             System.out.println("takeControl was interrupted: " + e.getLocalizedMessage());
             success = false;
         }
-        if( success ) {
-            TakeControlFragment f = (TakeControlFragment)getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
-            if( f != null ) {
-                f.setInControl();
+        // if success, enable temperature polling
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                temperaturePollLoop();
             }
-        }
+        });
         return success.booleanValue();
     }
     public boolean returnControl() {
-        AsyncTask<Void,Integer,Boolean> task = new TakeControlTask().execute();
+        AsyncTask<Void, Integer, Boolean> task = new ReturnControlTask().execute();
         Boolean success = false;
         try {
             success = task.get();
@@ -198,12 +198,6 @@ public class BrewingProgramListActivity extends Activity
         catch( Exception e ) {
             System.out.println("returnControl was interrupted: " + e.getLocalizedMessage());
             success = false;
-        }
-        if( success ) {
-            TakeControlFragment f = (TakeControlFragment)getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
-            if( f != null ) {
-                f.setNoControl();
-            }
         }
         return success.booleanValue();
     }
@@ -235,6 +229,23 @@ public class BrewingProgramListActivity extends Activity
         });
     }
 
+    public void temperaturePollLoop() {
+        if (mWibean.inControl()) {
+            AsyncTask<Void, Integer, String> task = new QueryTemperatureTask().execute();
+            mHandler.postDelayed(new Runnable() {
+                                     @Override
+                                     public void run() {
+                                         temperaturePollLoop();
+                                     }
+                                 },
+                    500
+            );
+        }
+    }
+    // ********************
+    // INTERFACES
+    // ********************
+
     /**
      * INTERFACE FOR NavigationDrawer fragment
      * add support for the navigation drawer
@@ -260,6 +271,10 @@ public class BrewingProgramListActivity extends Activity
         }
     }
 
+    public boolean onResetSelected() {
+        return returnControl();
+    }
+
 
     /**
      * INTERFACE FOR BrewingProgramListFragment
@@ -273,6 +288,7 @@ public class BrewingProgramListActivity extends Activity
         frag.setArguments(args);
         fragmentManager.beginTransaction()
                 .replace(R.id.list_content_container, frag, TAG_BREWINGPROGRAMDETAIL)
+                .addToBackStack(null)
                 .commit();
     }
 
@@ -288,6 +304,21 @@ public class BrewingProgramListActivity extends Activity
         return new WiBeanYunState.WiBeanAlarmPack();
     }
 
+    /**
+     * INTERFACE FOR BrewingProgramDetailFragment
+     * when the user wants to brew!
+     */
+    public boolean brewProgram(BrewingProgram theProgram) {
+        AsyncTask<BrewingProgram, Integer, Boolean> task = new BrewProgramTask().execute(theProgram);
+        Boolean success = false;
+        try {
+            success = task.get();
+        } catch (Exception e) {
+            System.out.println("brewProgram was interrupted: " + e.getLocalizedMessage());
+            success = false;
+        }
+        return success.booleanValue();
+    }
 
     /**
      * ASYNC TASKS USED TO DO NETWORK AND GUI CALLS APPROPRIATELY
@@ -302,10 +333,16 @@ public class BrewingProgramListActivity extends Activity
             refreshIp();
         }
         protected void onPostExecute(Boolean result) {
-            makeNotBusy();
             if( !result ) {
                 alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+            } else {
+                TakeControlFragment f = (TakeControlFragment) getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
+                if (f != null) {
+                    f.setInControl();
+                }
+                ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_in_control_true);
             }
+            makeNotBusy();
         }
     }
     private class ReturnControlTask extends AsyncTask<Void, Integer, Boolean> {
@@ -313,7 +350,56 @@ public class BrewingProgramListActivity extends Activity
             return mWibean.returnControl();
         }
         protected void onPreExecute() {
-            makeBusy("Please wait", "Taking control...");
+            makeBusy("Please wait", "Returning control...");
+            refreshIp();
+        }
+
+        protected void onPostExecute(Boolean result) {
+            if (!result) {
+                alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+            } else {
+                TakeControlFragment f = (TakeControlFragment) getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
+                if (f != null) {
+                    f.setNoControl();
+                }
+            }
+            makeNotBusy();
+        }
+    }
+
+    private class QueryTemperatureTask extends AsyncTask<Void, Integer, String> {
+        protected String doInBackground(Void... voids) {
+            StringBuilder builder = new StringBuilder();
+            mWibean.getTemperature(builder);
+            return builder.toString();
+        }
+
+        protected void onPreExecute() {
+            refreshIp();
+        }
+
+        protected void onPostExecute(String result) {
+            if (result.isEmpty()) {
+                alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+            } else {
+                TextView v = (TextView) findViewById(R.id.tv_headTemperature);
+                v.setText(result);
+            }
+            makeNotBusy();
+        }
+    }
+
+    private class BrewProgramTask extends AsyncTask<BrewingProgram, Integer, Boolean> {
+        protected Boolean doInBackground(BrewingProgram... programs) {
+            boolean success = true;
+            for (int k = 0; k < programs.length; ++k) {
+                success &= mWibean.runBrewProgram(programs[k]);
+            }
+            return success;
+        }
+
+        protected void onPreExecute() {
+            makeBusy("Brewing!", "Generating coffee...");
             refreshIp();
         }
         protected void onPostExecute(Boolean result) {

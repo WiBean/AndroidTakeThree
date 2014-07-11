@@ -11,6 +11,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
+import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanYunState;
+
 
 /**
  * A simple {@link Fragment} subclass.

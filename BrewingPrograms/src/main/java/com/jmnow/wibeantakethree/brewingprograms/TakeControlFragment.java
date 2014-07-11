@@ -1,18 +1,17 @@
 package com.jmnow.wibeantakethree.brewingprograms;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanYunState;
 
 
 /**
@@ -22,18 +21,22 @@ import com.squareup.okhttp.Response;
  * to handle interaction events.
  * Use the {@link TakeControlFragment#newInstance} factory method to
  * create an instance of this fragment.
- *
  */
-public class TakeControlFragment extends Fragment implements View.OnClickListener{
+public class TakeControlFragment extends Fragment implements View.OnClickListener {
     private static final String ARG_IN_CONTROL = "in_control";
 
     private boolean mInControl = false;
 
     private TakeControlFragmentListener mListener;
 
+    public TakeControlFragment() {
+        // Required empty public constructor
+    }
+
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
+     *
      * @param inControl Boolean describing whether or not the fragment state "in control" is active.
      * @return A new instance of fragment TakeControlFragment.
      */
@@ -45,9 +48,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         fragment.setArguments(args);
         return fragment;
     }
-    public TakeControlFragment() {
-        // Required empty public constructor
-    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +56,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
             mInControl = getArguments().getBoolean(ARG_IN_CONTROL);
         }
     }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -75,21 +77,20 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         // if we have a value in the store, load it and then connect
-        String ipAddress="";
+        String ipAddress = "";
         try {
             SharedPreferences prefs = getActivity().getPreferences(Context.MODE_PRIVATE);
-            ipAddress = prefs.getString(WiBeanYunState.UNIT_IP_PREF_KEY,"");
-        }
-        catch( Exception e ) {
+            ipAddress = prefs.getString(WiBeanYunState.UNIT_IP_PREF_KEY, "");
+        } catch (Exception e) {
             System.out.println("FATAL Error: sharedPreference for IP Address exists as wrong type???");
         }
-        if( ipAddress != "" ) {
+        if (ipAddress != "") {
             // populate the dialog
             View v = getView();
-            EditText ipText = (EditText)v.findViewById(R.id.etIpAddress);
+            EditText ipText = (EditText) v.findViewById(R.id.etIpAddress);
             ipText.setText(ipAddress);
             // try auto connect if we aren't in control
-            if( !mInControl ) {
+            if (!mInControl) {
                 btnTakeControl_onClick(v);
             }
         }
@@ -106,23 +107,23 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     }
 
 
-
     public void setInControl() {
         mInControl = true;
         View v = getView();
-        if( v!= null ) {
+        if (v != null) {
             Button b = (Button) v.findViewById(R.id.btnTakeControl);
             b.setCompoundDrawablesWithIntrinsicBounds(null, getResources().getDrawable(R.drawable.control_button_hot_selector), null, null);
-            b.setText(R.string.heading_in_control_true);
+            b.setText(R.string.action_release_control);
         }
     }
+
     public void setNoControl() {
         mInControl = false;
         View v = getView();
-        if( v!= null ) {
+        if (v != null) {
             Button b = (Button) v.findViewById(R.id.btnTakeControl);
             b.setCompoundDrawablesWithIntrinsicBounds(null, getResources().getDrawable(R.drawable.control_button_cold_selector), null, null);
-            b.setText(R.string.heading_in_control_false);
+            b.setText(R.string.action_take_control);
         }
     }
 
@@ -130,9 +131,9 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     public void btnTakeControl_onClick(View v) {
         //toggle
         // use the current ip value to update the database
-        EditText etIp = (EditText)getView().findViewById(R.id.etIpAddress);
+        EditText etIp = (EditText) getView().findViewById(R.id.etIpAddress);
         String currentText = etIp.getText().toString();
-        if( currentText.isEmpty() ) {
+        if (currentText.isEmpty()) {
             mListener.alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
             return;
         }
@@ -144,10 +145,9 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
             public void run() {
                 try {
                     boolean success = false;
-                    if( mInControl ) {
+                    if (!mInControl) {
                         success = mListener.takeControl();
-                    }
-                    else {
+                    } else {
                         success = mListener.returnControl();
                     }
                     if (success) {
@@ -158,7 +158,9 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
                     System.out.println("TakeControl Failed: " + e.getMessage() + ' ' + e.getClass());
                     //return false;
                 }
-                mListener.makeNotBusy();
+                if (mListener != null) {
+                    mListener.makeNotBusy();
+                }
             }
         }).start();
     }
@@ -174,11 +176,13 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         }
         ((BrewingProgramListActivity) activity).onSectionAttached(0);
     }
+
     @Override
     public void onDetach() {
         super.onDetach();
         mListener = null;
     }
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -187,9 +191,13 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
      */
     public interface TakeControlFragmentListener {
         public void alertUser(String title, String message);
+
         public void makeBusy(CharSequence title, CharSequence message);
+
         public void makeNotBusy();
+
         public boolean takeControl();
+
         public boolean returnControl();
     }
 
