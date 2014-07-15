@@ -6,16 +6,17 @@ package com.jmnow.wibeantakethree.brewingprograms.data;
 
 public class BrewingProgram {
     public static final Integer NUMONOFFTIMES = 5;
-    public Integer[] onTimes = new Integer[NUMONOFFTIMES];
-    public Integer[] offTimes = new Integer[NUMONOFFTIMES];
-    public String id;
-    public String name;
-    public String description;
+    private Integer[] onTimes = new Integer[NUMONOFFTIMES];
+    private Integer[] offTimes = new Integer[NUMONOFFTIMES];
+    private String id = "";
+    private String name = "";
+    private String description = "";
+    private String createdAt = "";
+    private String modifiedAt = "";
 
-
-    public BrewingProgram(String id, String content) {
-        this.id = id;
-        this.name = content;
+    public BrewingProgram(CharSequence id, CharSequence name) {
+        this.id = id.toString();
+        this.name = name.toString();
         this.description = "";
         for (Integer k = 0; k < NUMONOFFTIMES; ++k) {
             onTimes[k] = 0;
@@ -23,14 +24,29 @@ public class BrewingProgram {
         }
     }
 
-    public BrewingProgram(String id, String content, String description, Integer[] onTimes, Integer[] offTimes) {
-        this.id = id;
-        this.name = content;
-        this.description = description;
+    public BrewingProgram(CharSequence id, CharSequence name, CharSequence description, Integer[] onTimes, Integer[] offTimes) {
+        this.id = id.toString();
+        this.name = name.toString();
+        this.description = description.toString();
         this.onTimes = onTimes;
         this.offTimes = offTimes;
     }
 
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getModifiedAt() {
+        return modifiedAt;
+    }
+
+    public void setModifiedAt(String modifiedAt) {
+        this.modifiedAt = modifiedAt;
+    }
 
     public String getId() {
         return this.id;
@@ -57,13 +73,13 @@ public class BrewingProgram {
         return true;
     }
 
-    public boolean setName(String name) {
-        this.name = name;
+    public boolean setName(CharSequence name) {
+        this.name = name.toString();
         return true;
     }
 
-    public boolean setDescription(String description) {
-        this.description = description;
+    public boolean setDescription(CharSequence description) {
+        this.description = description.toString();
         return true;
     }
 

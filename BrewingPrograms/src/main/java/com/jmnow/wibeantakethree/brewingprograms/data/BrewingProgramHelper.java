@@ -54,13 +54,22 @@ public class BrewingProgramHelper extends SQLiteOpenHelper {
                 COLUMN_OFF_FOUR + " INTEGER, " +
                 COLUMN_ON_FIVE + " INTEGER, " +
                 COLUMN_OFF_FIVE + " INTEGER, " +
-                COLUMN_CREATED_AT + " TEXT DEFAULT CURRENT_TIMESTAMP, " +
-                COLUMN_MODIFIED_AT + " TEXT DEFAULT CURRENT_TIMESTAMP, " +
+                COLUMN_CREATED_AT + " TEXT DEFAULT current_timestamp, " +
+                COLUMN_MODIFIED_AT + " TEXT DEFAULT current_timestamp, " +
                 COLUMN_ORIGINAL_AUTHOR + " TEXT )";
 
         // create brewing programs table
         db.execSQL(CREATE_BREWINGPROGRAM_TABLE);
         // add in some data
+        createHelper(db, "Starter Program", "A basic program", 70, 0, 0, 0);
+        createHelper(db, "Level One", "Some customization", 20, 20, 50, 0);
+        createHelper(db, "Heavy Delay", "Allows a great steep time", 15, 50, 60, 0);
+        createHelper(db, "Starter Program", "A basic program", 70, 0, 0, 0);
+        createHelper(db, "Level One", "Some customization", 20, 20, 50, 0);
+        createHelper(db, "Heavy Delay", "Allows a great steep time", 15, 50, 60, 0);
+        createHelper(db, "Starter Program", "A basic program", 70, 0, 0, 0);
+        createHelper(db, "Level One", "Some customization", 20, 20, 50, 0);
+        createHelper(db, "Heavy Delay", "Allows a great steep time", 15, 50, 60, 0);
         createHelper(db, "Starter Program", "A basic program", 70, 0, 0, 0);
         createHelper(db, "Level One", "Some customization", 20, 20, 50, 0);
         createHelper(db, "Heavy Delay", "Allows a great steep time", 15, 50, 60, 0);

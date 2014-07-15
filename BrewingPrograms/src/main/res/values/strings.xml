@@ -8,6 +8,10 @@
     <string name="action_brew">Brew!</string>
     <string name="action_take_control">Take Control!</string>
     <string name="action_release_control">Release Control!</string>
+    <string name="action_discardProgramChanges">Dischard Changes</string>
+    <string name="action_discardDeleteProgram">Delete Program!</string>
+    <string name="action_saveProgram">Save Changes</string>
+    <string name="action_createProgram">Create!</string>
 
     <string name="title_takeControl">Take Control</string>
     <string name="title_brewingprogram_list">Brewing Programs</string>
@@ -19,6 +23,9 @@
 
     <string name="heading_in_control_true">We have control!</string>
     <string name="heading_in_control_false">Uncontrolled</string>
+    <string name="heading_program_unit_description">*All times given in units of 100ms</string>
+    <string name="heading_example_program_name">Example Program Title</string>
+    <string name="heading_example_program_description">The greatest example program ever.</string>
 
     <string name="loading_message">Working, please wait...</string>
     <string name="label_ip_address">WiBean IP: </string>
@@ -28,5 +35,6 @@
             Note: IPV6 is not supported.</string>
     <string name="dialog_ip_error_title">Connection Error</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
 
 </resources>

@@ -38,6 +38,7 @@ public class WiBeanYunState {
     public boolean inControl() {
         return mInControl;
     }
+
     public boolean takeControl() {
         return takeControl(mDesiredTemperatureInCelsius);
     }
@@ -152,11 +153,11 @@ public class WiBeanYunState {
      * @param ipAsString e.g. 192.168.1.144
      * @return
      */
-    public boolean setIpAddress(String ipAsString) {
+    public boolean setIpAddress(CharSequence ipAsString) {
         if (ipAsString.length() > 19) {
             return false;
         }
-        mDeviceIp = ipAsString;
+        mDeviceIp = ipAsString.toString();
         return true;
     }
 

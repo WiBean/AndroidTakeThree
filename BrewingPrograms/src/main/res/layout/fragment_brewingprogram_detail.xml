@@ -1,167 +1,314 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/brewingprogram_detail"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="16dp"
     android:textIsSelectable="true"
     tools:context=".BrewingProgramDetailFragment">
 
-
-    <TextView
-        android:id="@+id/tv_program_name"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:gravity="left"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
-
-    <TextView
-        android:id="@+id/tv_program_description"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:gravity="left"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
-
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/et_program_name"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:hint="@string/heading_example_program_name"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
+        <EditText
+            android:id="@+id/et_program_description"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:hint="@string/heading_example_program_description"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <TextView
+            android:id="@+id/tv_unit_description"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:text="@string/heading_program_unit_description" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text="On for: " />
+
+            <EditText
+                android:id="@+id/et_onForOne"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text=" then off for: " />
+
+            <EditText
+                android:id="@+id/et_offForOne"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text="On for: " />
+
+            <EditText
+                android:id="@+id/et_onForTwo"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text=" then off for: " />
+
+            <EditText
+                android:id="@+id/et_offForTwo"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text="On for: " />
+
+            <EditText
+                android:id="@+id/et_onForThree"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text=" then off for: " />
+
+            <EditText
+                android:id="@+id/et_offForThree"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text="On for: " />
+
+            <EditText
+                android:id="@+id/et_onForFour"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text=" then off for: " />
+
+            <EditText
+                android:id="@+id/et_offForFour"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text="On for: " />
+
+            <EditText
+                android:id="@+id/et_onForFive"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:text=" then off for: " />
+
+            <EditText
+                android:id="@+id/et_offForFive"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:maxLines="1"
+                android:minWidth="60sp"
+                android:numeric="integer"
+                android:text="0" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:text="On for: " />
+            android:labelFor="@+id/tv_createdAt"
+            android:text="Created At:" />
 
         <TextView
-            android:id="@+id/tv_onForOne"
+            android:id="@id/tv_createdAt"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:text=" then off for: " />
+            android:labelFor="@+id/tv_modifiedAt"
+            android:text="Modified At:" />
 
         <TextView
-            android:id="@+id/tv_offForOne"
+            android:id="@id/tv_modifiedAt"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent" />
+
+
+        <Button
+            android:id="@+id/btn_brew"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:layout_margin="5dp"
+            android:enabled="false"
+            android:onClick="brewButtonClicked"
+            android:text="@string/action_brew"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
+        <Button
+            android:id="@+id/btn_saveProgram"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:layout_margin="5dp"
+            android:enabled="false"
+            android:text="@string/action_saveProgram"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <Button
+            android:id="@+id/btn_programDiscardChanges"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:layout_margin="5dp"
+            android:enabled="false"
+            android:text="@string/action_discardProgramChanges"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <Button
+            android:id="@+id/btn_deleteProgram"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:layout_margin="5dp"
+            android:enabled="false"
+            android:text="@string/action_discardDeleteProgram" />
     </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:text="On for: " />
-
-        <TextView
-            android:id="@+id/tv_onForTwo"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:text=" then off for: " />
-
-        <TextView
-            android:id="@+id/tv_offForTwo"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:text="On for: " />
-
-        <TextView
-            android:id="@+id/tv_onForThree"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:text=" then off for: " />
-
-        <TextView
-            android:id="@+id/tv_offForThree"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:text="On for: " />
-
-        <TextView
-            android:id="@+id/tv_onForFour"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:text=" then off for: " />
-
-        <TextView
-            android:id="@+id/tv_offForFour"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:text="On for: " />
-
-        <TextView
-            android:id="@+id/tv_onForFive"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:text=" then off for: " />
-
-        <TextView
-            android:id="@+id/tv_offForFive"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
-    </LinearLayout>
-
-
-    <Button
-        android:id="@+id/btn_brew"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right"
-        android:enabled="false"
-        android:onClick="brewButtonClicked"
-        android:text="@string/action_brew"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
-</LinearLayout>
-
+</ScrollView>

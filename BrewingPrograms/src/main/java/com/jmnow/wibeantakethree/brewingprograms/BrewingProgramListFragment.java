@@ -1,5 +1,6 @@
 package com.jmnow.wibeantakethree.brewingprograms;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ListFragment;
 import android.app.LoaderManager;
@@ -7,6 +8,9 @@ import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
@@ -88,6 +92,7 @@ public class BrewingProgramListFragment extends ListFragment implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
         /*
          * Defines a SimpleCursorAdapter for the ListView
          * Utilizes built in Android resources (note android.R....)
@@ -104,7 +109,6 @@ public class BrewingProgramListFragment extends ListFragment implements
         // Sets the adapter for the view
         setListAdapter(mAdapter);
     }
-
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -120,6 +124,24 @@ public class BrewingProgramListFragment extends ListFragment implements
          */
         getLoaderManager().initLoader(PROGRAMS_LOADER, null, this);
     }
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.brewing_program_list, menu);
+        ActionBar actionBar = getActivity().getActionBar();
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+        actionBar.setDisplayShowTitleEnabled(true);
+        actionBar.setTitle("Programs");
+        // Hookup the Create new button
+        MenuItem item = menu.findItem(R.id.menu_item_create_new);
+        item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                mCallbacks.onItemSelected("");
+                return true;
+            }
+        });
+    }
 
     @Override
     public void onAttach(Activity activity) {
@@ -134,7 +156,6 @@ public class BrewingProgramListFragment extends ListFragment implements
 
         ((BrewingProgramListActivity) activity).onSectionAttached(1);
     }
-
     @Override
     public void onDetach() {
         super.onDetach();
@@ -142,7 +163,6 @@ public class BrewingProgramListFragment extends ListFragment implements
         // Reset the active callbacks interface to the dummy implementation.
         mCallbacks = sDummyCallbacks;
     }
-
     @Override
     public void onListItemClick(ListView listView, View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
@@ -151,7 +171,6 @@ public class BrewingProgramListFragment extends ListFragment implements
         // fragment is attached to one) that an item has been selected.
         mCallbacks.onItemSelected(Long.valueOf(id).toString());
     }
-
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -207,7 +226,7 @@ public class BrewingProgramListFragment extends ListFragment implements
                         mProjection,     // Projection to return
                         null,            // No selection clause
                         null,            // No selection arguments
-                        null             // Default sort order
+                        "datetime(" + BrewingProgramHelper.COLUMN_MODIFIED_AT + ") DESC" // Default sort order
                 );
             default:
                 // An invalid id was passed in
@@ -227,7 +246,6 @@ public class BrewingProgramListFragment extends ListFragment implements
      */
         mAdapter.changeCursor(cursor);
     }
-
     /*
      * Invoked when the CursorLoader is being reset. For example, this is
      * called if the data in the provider changes and the Cursor becomes stale.
@@ -241,7 +259,6 @@ public class BrewingProgramListFragment extends ListFragment implements
      */
         mAdapter.changeCursor(null);
     }
-
     /**
      * A callback interface that all activities containing this fragment must
      * implement. This mechanism allows activities to be notified of item

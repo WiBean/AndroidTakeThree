@@ -25,11 +25,11 @@ import com.squareup.okhttp.OkHttpClient;
  * lead to a {@link BrewingProgramDetailActivity} representing
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
- * <p>
+ * <p/>
  * The activity makes heavy use of fragments. The list of items is a
  * {@link BrewingProgramListFragment} and the item details
  * (if present) is a {@link BrewingProgramDetailFragment}.
- * <p>
+ * <p/>
  * This activity also implements the required
  * {@link BrewingProgramListFragment.Callbacks} interface
  * to listen for item selections.
@@ -41,16 +41,16 @@ public class BrewingProgramListActivity extends Activity
         AlarmFragment.WiBeanAlarmFragmentInteractionListener,
         BrewingProgramDetailFragment.BrewingProgramDetailCallbacks {
 
-     /**
-      * FRAGMENT IDENTIFIERS
-      */
+    /**
+     * FRAGMENT IDENTIFIERS
+     */
     private static final String TAG_TAKECONTROL = "fragment_takeControl";
     private static final String TAG_BREWINGPROGRAMLIST = "fragment_brewingProgramList";
     private static final String TAG_ALARM = "fragment_alarm";
     private static final String TAG_BREWINGPROGRAMDETAIL = "fragment_brewingProgramDetail";
     // httpClient, make one to save resources
     OkHttpClient mHttpClient;
-     /**
+    /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
     private NavigationDrawerFragment mNavigationDrawerFragment;
@@ -59,8 +59,6 @@ public class BrewingProgramListActivity extends Activity
      * device.
      */
     private boolean mTwoPane;
-    // title shows above
-    private CharSequence mTitle;
     // Handler allows us to run actions on the GUI thread, and post delayed events
     private Handler mHandler = new Handler();
     // used to store pointer to a progress dialog
@@ -96,7 +94,6 @@ public class BrewingProgramListActivity extends Activity
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
 
-        mTitle = getTitle();
         mHttpClient = new OkHttpClient();
 
         // TODO: If exposing deep links into your app, handle intents here.
@@ -104,6 +101,10 @@ public class BrewingProgramListActivity extends Activity
 
 
     public void onSectionAttached(int number) {
+        /**
+         * Don't handle this here for now
+         */
+        /*
         switch (number) {
             case 0:
                 mTitle = getString(R.string.title_takeControl);
@@ -115,12 +116,13 @@ public class BrewingProgramListActivity extends Activity
                 mTitle = getString(R.string.title_wakeAlarm);
                 break;
         }
+        */
     }
+
     public void restoreActionBar() {
         ActionBar actionBar = getActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
-        actionBar.setTitle(mTitle);
     }
 
     @Override
@@ -138,8 +140,8 @@ public class BrewingProgramListActivity extends Activity
 
     public boolean refreshIp() {
         SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
-        String ipAddress = prefs.getString(WiBeanYunState.UNIT_IP_PREF_KEY,"");
-        if( ipAddress.isEmpty() ) {
+        String ipAddress = prefs.getString(WiBeanYunState.UNIT_IP_PREF_KEY, "");
+        if (ipAddress.isEmpty()) {
             return false;
         }
         return mWibean.setIpAddress(ipAddress);
@@ -157,7 +159,8 @@ public class BrewingProgramListActivity extends Activity
     /**
      * Allows fragment to request alert dialogues which the host activity can appropriately
      * display.
-     * @param title Title of the Alert Dialog.
+     *
+     * @param title   Title of the Alert Dialog.
      * @param message Message displayed in the Alert Dialog.
      */
     public void alertUser(String title, String message) {
@@ -165,18 +168,17 @@ public class BrewingProgramListActivity extends Activity
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(message)
                 .setTitle(title)
-                .setPositiveButton("OK",null);
+                .setPositiveButton("OK", null);
         AlertDialog dialog = builder.create();
         dialog.show();
     }
 
     public boolean takeControl() {
-        AsyncTask<Void,Integer,Boolean> task = new TakeControlTask().execute();
+        AsyncTask<Void, Integer, Boolean> task = new TakeControlTask().execute();
         Boolean success = false;
         try {
-           success = task.get();
-        }
-        catch( Exception e ) {
+            success = task.get();
+        } catch (Exception e) {
             System.out.println("takeControl was interrupted: " + e.getLocalizedMessage());
             success = false;
         }
@@ -189,24 +191,25 @@ public class BrewingProgramListActivity extends Activity
         });
         return success.booleanValue();
     }
+
     public boolean returnControl() {
         AsyncTask<Void, Integer, Boolean> task = new ReturnControlTask().execute();
         Boolean success = false;
         try {
             success = task.get();
-        }
-        catch( Exception e ) {
+        } catch (Exception e) {
             System.out.println("returnControl was interrupted: " + e.getLocalizedMessage());
             success = false;
         }
         return success.booleanValue();
     }
+
     /**
      * Allows user to use the progress bar for the whole activity.
      * Setup so that callers can use any thread
      */
     public void makeBusy(final CharSequence title, final CharSequence message) {
-        if( !mHandler.post(new Runnable() {
+        if (!mHandler.post(new Runnable() {
             public void run() {
                 mProgess = new ProgressDialog(BrewingProgramListActivity.this);
                 mProgess.setTitle(title);
@@ -215,14 +218,15 @@ public class BrewingProgramListActivity extends Activity
                 mProgess.setCancelable(false);
                 mProgess.show();
             }
-        }) ) {
+        })) {
             System.out.println("ERROR MAKING BUSY!");
         }
     }
+
     public void makeNotBusy() {
         mHandler.post(new Runnable() {
             public void run() {
-                if( mProgess != null) {
+                if (mProgess != null) {
                     mProgess.dismiss();
                 }
             }
@@ -254,17 +258,15 @@ public class BrewingProgramListActivity extends Activity
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
         FragmentManager fragmentManager = getFragmentManager();
-        if( position == 0) {
+        if (position == 0) {
             fragmentManager.beginTransaction()
                     .replace(R.id.list_content_container, TakeControlFragment.newInstance(false), TAG_TAKECONTROL)
                     .commit();
-        }
-        else if( position == 1) {
+        } else if (position == 1) {
             fragmentManager.beginTransaction()
                     .replace(R.id.list_content_container, new BrewingProgramListFragment(), TAG_BREWINGPROGRAMLIST)
                     .commit();
-        }
-        else {
+        } else {
             fragmentManager.beginTransaction()
                     .replace(R.id.list_content_container, AlarmFragment.newInstance(70, 540, 20), TAG_ALARM)
                     .commit();
@@ -297,9 +299,10 @@ public class BrewingProgramListActivity extends Activity
      * INTERFACE FOR AlarmFragment
      * tries communication when user sets alarm
      */
-    public boolean sendAlarmRequest(WiBeanYunState.WiBeanAlarmPack requestedAlarm){
+    public boolean sendAlarmRequest(WiBeanYunState.WiBeanAlarmPack requestedAlarm) {
         return true;
     }
+
     public WiBeanYunState.WiBeanAlarmPack requestAlarmState() {
         return new WiBeanYunState.WiBeanAlarmPack();
     }
@@ -328,12 +331,14 @@ public class BrewingProgramListActivity extends Activity
         protected Boolean doInBackground(Void... voids) {
             return mWibean.takeControl();
         }
+
         protected void onPreExecute() {
             makeBusy("Please wait", "Taking control...");
             refreshIp();
         }
+
         protected void onPostExecute(Boolean result) {
-            if( !result ) {
+            if (!result) {
                 alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
             } else {
                 TakeControlFragment f = (TakeControlFragment) getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
@@ -345,10 +350,12 @@ public class BrewingProgramListActivity extends Activity
             makeNotBusy();
         }
     }
+
     private class ReturnControlTask extends AsyncTask<Void, Integer, Boolean> {
         protected Boolean doInBackground(Void... voids) {
             return mWibean.returnControl();
         }
+
         protected void onPreExecute() {
             makeBusy("Please wait", "Returning control...");
             refreshIp();
@@ -402,9 +409,10 @@ public class BrewingProgramListActivity extends Activity
             makeBusy("Brewing!", "Generating coffee...");
             refreshIp();
         }
+
         protected void onPostExecute(Boolean result) {
             makeNotBusy();
-            if( !result ) {
+            if (!result) {
                 alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
             }
         }

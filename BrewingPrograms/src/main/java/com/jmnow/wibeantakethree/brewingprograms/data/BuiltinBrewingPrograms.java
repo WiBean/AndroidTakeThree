@@ -31,7 +31,7 @@ public class BuiltinBrewingPrograms {
 
     private static void addItem(BrewingProgram item) {
         ITEMS.add(item);
-        ITEM_MAP.put(item.id, item);
+        ITEM_MAP.put(item.getId(), item);
     }
 
 }

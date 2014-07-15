@@ -1,8 +1,9 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="fill_parent"
     android:background="#FFFFFF"
+    android:foregroundGravity="fill_vertical"
     tools:context="com.jmnow.wibeantakethree.brewingprograms.TakeControlFragment">
 
     <LinearLayout
@@ -36,6 +37,7 @@
                 android:layout_height="wrap_content"
                 android:hint="@string/hint_ip_address"
                 android:maxLength="15"
+                android:minWidth="160sp"
                 android:singleLine="true" />
         </LinearLayout>
 

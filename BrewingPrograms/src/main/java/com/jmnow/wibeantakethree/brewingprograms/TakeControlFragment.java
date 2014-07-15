@@ -1,11 +1,14 @@
 package com.jmnow.wibeantakethree.brewingprograms;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -52,6 +55,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
         if (getArguments() != null) {
             mInControl = getArguments().getBoolean(ARG_IN_CONTROL);
         }
@@ -94,6 +98,16 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
                 btnTakeControl_onClick(v);
             }
         }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        //inflater.inflate(R.menu.brewing_program, menu);  We don't need extra menus here
+        ActionBar actionBar = getActivity().getActionBar();
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+        actionBar.setDisplayShowTitleEnabled(true);
+        actionBar.setTitle("Take Control");
     }
 
     // handle onClick in the fragment, yay Android Fragments
