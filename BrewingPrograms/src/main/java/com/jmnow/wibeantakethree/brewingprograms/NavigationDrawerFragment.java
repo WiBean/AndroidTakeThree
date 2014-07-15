@@ -18,7 +18,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation drawer.
@@ -225,11 +224,7 @@ public class NavigationDrawerFragment extends Fragment {
             return true;
         }
         if (item.getItemId() == R.id.action_reset) {
-            if (mCallbacks.onResetSelected()) {
-                Toast.makeText(getActivity(), "Reset Success.", Toast.LENGTH_LONG);
-            } else {
-                Toast.makeText(getActivity(), "Reset Failed!\nAlready reset?", Toast.LENGTH_LONG);
-            }
+            mCallbacks.onResetSelected();
         }
         return success;
     }
@@ -248,9 +243,8 @@ public class NavigationDrawerFragment extends Fragment {
     public static interface NavigationDrawerCallbacks {
         // when an item is selected
         void onNavigationDrawerItemSelected(int position);
-
         // if they click the reset button
-        boolean onResetSelected();
+        void onResetSelected();
         // if they select settings
         // do stuff;
     }

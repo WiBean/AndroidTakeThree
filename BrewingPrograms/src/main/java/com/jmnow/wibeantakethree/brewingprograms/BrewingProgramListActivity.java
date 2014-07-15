@@ -173,64 +173,39 @@ public class BrewingProgramListActivity extends Activity
         dialog.show();
     }
 
-    public boolean takeControl() {
-        AsyncTask<Void, Integer, Boolean> task = new TakeControlTask().execute();
-        Boolean success = false;
+    public void takeControl() {
         try {
-            success = task.get();
+            AsyncTask<Void, Integer, Boolean> task = new TakeControlTask().execute();
         } catch (Exception e) {
             System.out.println("takeControl was interrupted: " + e.getLocalizedMessage());
-            success = false;
         }
-        // if success, enable temperature polling
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                temperaturePollLoop();
-            }
-        });
-        return success.booleanValue();
     }
 
-    public boolean returnControl() {
-        AsyncTask<Void, Integer, Boolean> task = new ReturnControlTask().execute();
-        Boolean success = false;
+    public void returnControl() {
         try {
-            success = task.get();
+            AsyncTask<Void, Integer, Boolean> task = new ReturnControlTask().execute();
         } catch (Exception e) {
             System.out.println("returnControl was interrupted: " + e.getLocalizedMessage());
-            success = false;
         }
-        return success.booleanValue();
     }
 
     /**
      * Allows user to use the progress bar for the whole activity.
-     * Setup so that callers can use any thread
+     * Designed to be called in the GUI thread, most likely via an AsyncTask pre/post trigger
      */
     public void makeBusy(final CharSequence title, final CharSequence message) {
-        if (!mHandler.post(new Runnable() {
-            public void run() {
-                mProgess = new ProgressDialog(BrewingProgramListActivity.this);
-                mProgess.setTitle(title);
-                mProgess.setMessage(message);
-                mProgess.setIndeterminate(true);
-                mProgess.setCancelable(false);
-                mProgess.show();
-            }
-        })) {
-            System.out.println("ERROR MAKING BUSY!");
-        }
+        mProgess = new ProgressDialog(BrewingProgramListActivity.this);
+        mProgess.setTitle(title);
+        mProgess.setMessage(message);
+        mProgess.setIndeterminate(true);
+        mProgess.setCancelable(false);
+        mProgess.show();
     }
 
     public void makeNotBusy() {
-        mHandler.post(new Runnable() {
-            public void run() {
-                if (mProgess != null) {
-                    mProgess.dismiss();
-                }
-            }
-        });
+        if (mProgess != null) {
+            mProgess.dismiss();
+        }
     }
 
     public void temperaturePollLoop() {
@@ -260,7 +235,7 @@ public class BrewingProgramListActivity extends Activity
         FragmentManager fragmentManager = getFragmentManager();
         if (position == 0) {
             fragmentManager.beginTransaction()
-                    .replace(R.id.list_content_container, TakeControlFragment.newInstance(false), TAG_TAKECONTROL)
+                    .replace(R.id.list_content_container, TakeControlFragment.newInstance(mWibean.inControl()), TAG_TAKECONTROL)
                     .commit();
         } else if (position == 1) {
             fragmentManager.beginTransaction()
@@ -273,8 +248,8 @@ public class BrewingProgramListActivity extends Activity
         }
     }
 
-    public boolean onResetSelected() {
-        return returnControl();
+    public void onResetSelected() {
+        returnControl();
     }
 
 
@@ -311,16 +286,15 @@ public class BrewingProgramListActivity extends Activity
      * INTERFACE FOR BrewingProgramDetailFragment
      * when the user wants to brew!
      */
-    public boolean brewProgram(BrewingProgram theProgram) {
-        AsyncTask<BrewingProgram, Integer, Boolean> task = new BrewProgramTask().execute(theProgram);
+    public void brewProgram(BrewingProgram theProgram) {
+
         Boolean success = false;
         try {
-            success = task.get();
+            AsyncTask<BrewingProgram, Integer, Boolean> task = new BrewProgramTask().execute(theProgram);
         } catch (Exception e) {
             System.out.println("brewProgram was interrupted: " + e.getLocalizedMessage());
             success = false;
         }
-        return success.booleanValue();
     }
 
     /**
@@ -347,20 +321,32 @@ public class BrewingProgramListActivity extends Activity
                 }
                 ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_in_control_true);
             }
+            // if success, enable temperature polling
+            if (mHandler != null) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        temperaturePollLoop();
+                    }
+                });
+            }
             makeNotBusy();
         }
     }
 
     private class ReturnControlTask extends AsyncTask<Void, Integer, Boolean> {
         protected Boolean doInBackground(Void... voids) {
-            return mWibean.returnControl();
+            if (mWibean.inControl()) {
+                return mWibean.returnControl();
+            } else {
+                mWibean.returnControl(); // always send the command for safety
+                return true; //already not in-control, so report success for the user
+            }
         }
-
         protected void onPreExecute() {
             makeBusy("Please wait", "Returning control...");
             refreshIp();
         }
-
         protected void onPostExecute(Boolean result) {
             if (!result) {
                 alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
@@ -369,6 +355,7 @@ public class BrewingProgramListActivity extends Activity
                 if (f != null) {
                     f.setNoControl();
                 }
+                ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_in_control_false);
             }
             makeNotBusy();
         }
@@ -380,14 +367,12 @@ public class BrewingProgramListActivity extends Activity
             mWibean.getTemperature(builder);
             return builder.toString();
         }
-
         protected void onPreExecute() {
             refreshIp();
         }
-
         protected void onPostExecute(String result) {
             if (result.isEmpty()) {
-                alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+                // do nothing
             } else {
                 TextView v = (TextView) findViewById(R.id.tv_headTemperature);
                 v.setText(result);
@@ -411,10 +396,10 @@ public class BrewingProgramListActivity extends Activity
         }
 
         protected void onPostExecute(Boolean result) {
-            makeNotBusy();
             if (!result) {
                 alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
             }
+            makeNotBusy();
         }
     }
 }

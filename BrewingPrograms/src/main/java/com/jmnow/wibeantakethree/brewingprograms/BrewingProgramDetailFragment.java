@@ -75,6 +75,7 @@ public class BrewingProgramDetailFragment extends Fragment implements
      */
     private BrewingProgram mItem = new BrewingProgram("-1", "", "",
             new Integer[]{0, 0, 0, 0, 0}, new Integer[]{0, 0, 0, 0, 0});
+
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
@@ -96,7 +97,7 @@ public class BrewingProgramDetailFragment extends Fragment implements
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View rootView = inflater.inflate(R.layout.fragment_brewingprogram_detail, container, false);
         if (!mItem.getId().isEmpty()) {
@@ -197,6 +198,7 @@ public class BrewingProgramDetailFragment extends Fragment implements
             ((Button) getView().findViewById(R.id.btn_programDiscardChanges)).setEnabled(different);
         }
     }
+
     private void updateUiFromItem() {
         // do stuff;
         EditText et;
@@ -543,6 +545,6 @@ public class BrewingProgramDetailFragment extends Fragment implements
     }
 
     public interface BrewingProgramDetailCallbacks {
-        boolean brewProgram(BrewingProgram theProgram);
+        void brewProgram(BrewingProgram theProgram);
     }
 }

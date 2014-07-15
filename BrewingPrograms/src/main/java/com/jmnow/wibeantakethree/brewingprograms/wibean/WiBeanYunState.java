@@ -95,22 +95,24 @@ public class WiBeanYunState {
         if (!mInControl) {
             return false;
         }
-        boolean success = false;
-        String targetURL = "http://" + mDeviceIp + "/arduino/temperature/0";
+        String targetURL = "http://" + mDeviceIp + "/arduino/thermometer/0";
         Request request = new Request.Builder().url(targetURL).build();
         try {
             Response response = mHttpClient.newCall(request).execute();
             final String bodyAsString = response.body().string();
-            final int charPointer = bodyAsString.lastIndexOf("thermometerTemperatureInCelsius:");
+            final String tempPrefix = "thermometerTemperatureInCelsius:";
+            final int charPointer = bodyAsString.lastIndexOf(tempPrefix);
             if (charPointer != -1) {
-                emptyBuilderForTemperatureReturn.append(bodyAsString.substring(charPointer));
+                emptyBuilderForTemperatureReturn.append(bodyAsString.substring(1 + charPointer + tempPrefix.length()).trim());
                 return true;
             }
         } catch (Exception e) {
             //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
             System.out.println("getTemperature Failed: " + e.getMessage() + ' ' + e.getClass());
         }
-        return false;
+        // if we get here, something went wrong
+        emptyBuilderForTemperatureReturn.append("ERR");
+        return true;
     }
 
     // reset control of the WiBean device so the machine acts as if we aren't even there.
@@ -125,7 +127,7 @@ public class WiBeanYunState {
         StringBuilder targetURL = new StringBuilder();
         targetURL.append("http://").append(mDeviceIp).append("/arduino/pump/");
         for (int k = 0; k < onTimes.length; ++k) {
-            targetURL.append(onTimes[k]).append('/').append(offTimes[k]);
+            targetURL.append(onTimes[k]).append('/').append(offTimes[k]).append('/');
         }
         Request request = new Request.Builder().url(targetURL.toString()).build();
         try {

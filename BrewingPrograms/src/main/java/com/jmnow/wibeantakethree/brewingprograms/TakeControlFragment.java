@@ -57,7 +57,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         if (getArguments() != null) {
-            mInControl = getArguments().getBoolean(ARG_IN_CONTROL);
+            mInControl = getArguments().getBoolean(ARG_IN_CONTROL, false);
         }
     }
 
@@ -155,28 +155,17 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         SharedPreferences.Editor prefsEdit = getActivity().getPreferences(Context.MODE_PRIVATE).edit();
         prefsEdit.putString(WiBeanYunState.UNIT_IP_PREF_KEY, currentText);
         prefsEdit.commit();
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    boolean success = false;
-                    if (!mInControl) {
-                        success = mListener.takeControl();
-                    } else {
-                        success = mListener.returnControl();
-                    }
-                    if (success) {
-                        mInControl = !mInControl;
-                    }
-                } catch (Exception e) {
-                    //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
-                    System.out.println("TakeControl Failed: " + e.getMessage() + ' ' + e.getClass());
-                    //return false;
-                }
-                if (mListener != null) {
-                    mListener.makeNotBusy();
-                }
+        try {
+            if (!mInControl) {
+                mListener.takeControl();
+            } else {
+                mListener.returnControl();
             }
-        }).start();
+        } catch (Exception e) {
+            //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
+            System.out.println("TakeControl Failed: " + e.getMessage() + ' ' + e.getClass());
+            //return false;
+        }
     }
 
     @Override
@@ -206,13 +195,9 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     public interface TakeControlFragmentListener {
         public void alertUser(String title, String message);
 
-        public void makeBusy(CharSequence title, CharSequence message);
+        public void takeControl();
 
-        public void makeNotBusy();
-
-        public boolean takeControl();
-
-        public boolean returnControl();
+        public void returnControl();
     }
 
 }
