@@ -13,17 +13,19 @@
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".BrewingProgramDetailActivity"
-            android:label="@string/title_brewingprogram_detail"
-            android:parentActivityName=".BrewingProgramListActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".BrewingProgramListActivity" />
+            <intent-filter android:label="@string/filter_title_viewBrewingProgram">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="www.wibean.com"
+                    android:pathPrefix="brewingProgram/v1"
+                    android:scheme="http" />
+            </intent-filter>
         </activity>
 
         <provider

@@ -1,5 +1,7 @@
 package com.jmnow.wibeantakethree.brewingprograms.data;
 
+import java.net.URI;
+
 /**
  * Represents a single brewing program.
  */
@@ -8,16 +10,16 @@ public class BrewingProgram {
     public static final Integer NUMONOFFTIMES = 5;
     private Integer[] onTimes = new Integer[NUMONOFFTIMES];
     private Integer[] offTimes = new Integer[NUMONOFFTIMES];
-    private String id = "";
-    private String name = "";
-    private String description = "";
-    private String createdAt = "";
-    private String modifiedAt = "";
+    private String mId = "";
+    private String mName = "";
+    private String mDescription = "";
+    private String mCreatedAt = "";
+    private String mModifiedAt = "";
 
     public BrewingProgram(CharSequence id, CharSequence name) {
-        this.id = id.toString();
-        this.name = name.toString();
-        this.description = "";
+        this.mId = id.toString();
+        this.mName = name.toString();
+        this.mDescription = "";
         for (Integer k = 0; k < NUMONOFFTIMES; ++k) {
             onTimes[k] = 0;
             offTimes[k] = 0;
@@ -25,39 +27,39 @@ public class BrewingProgram {
     }
 
     public BrewingProgram(CharSequence id, CharSequence name, CharSequence description, Integer[] onTimes, Integer[] offTimes) {
-        this.id = id.toString();
-        this.name = name.toString();
-        this.description = description.toString();
+        this.mId = id.toString();
+        this.mName = name.toString();
+        this.mDescription = description.toString();
         this.onTimes = onTimes;
         this.offTimes = offTimes;
     }
 
     public String getCreatedAt() {
-        return createdAt;
+        return mCreatedAt;
     }
 
     public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
+        this.mCreatedAt = createdAt;
     }
 
     public String getModifiedAt() {
-        return modifiedAt;
+        return mModifiedAt;
     }
 
     public void setModifiedAt(String modifiedAt) {
-        this.modifiedAt = modifiedAt;
+        this.mModifiedAt = modifiedAt;
     }
 
     public String getId() {
-        return this.id;
+        return this.mId;
     }
 
     public String getName() {
-        return this.name;
+        return this.mName;
     }
 
     public String getDescription() {
-        return this.description;
+        return this.mDescription;
     }
 
     public Integer[] getOnTimes() {
@@ -69,17 +71,17 @@ public class BrewingProgram {
     }
 
     public boolean setId(String id) {
-        this.id = id;
+        this.mId = id;
         return true;
     }
 
     public boolean setName(CharSequence name) {
-        this.name = name.toString();
+        this.mName = name.toString();
         return true;
     }
 
     public boolean setDescription(CharSequence description) {
-        this.description = description.toString();
+        this.mDescription = description.toString();
         return true;
     }
 
@@ -123,6 +125,23 @@ public class BrewingProgram {
 
     @Override
     public String toString() {
-        return name + description;
+        return mName + mDescription;
+    }
+
+    public URI toUri() {
+        StringBuilder queryString = new StringBuilder();
+        queryString.append("name=").append(mName).append("&");
+        queryString.append("description=").append(mDescription).append("&");
+        queryString.append("modified_at=").append(mModifiedAt).append("&");
+        queryString.append("created_at=").append(mCreatedAt).append("&");
+        for (int k = 0; k < NUMONOFFTIMES; ++k) {
+            queryString.append("onF[").append(k).append("]=").append(onTimes[k]).append("&");
+            queryString.append("offF[").append(k).append("]=").append(offTimes[k]).append("&");
+        }
+        try {
+            return new URI("http", "www.wibean.com", "brewingProgram/v1", queryString.toString(), "");
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

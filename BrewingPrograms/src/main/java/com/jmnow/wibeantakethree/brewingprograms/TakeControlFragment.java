@@ -73,7 +73,6 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         // removing modularity)
         Button b = (Button) v.findViewById(R.id.btnTakeControl);
         b.setOnClickListener(this);
-
         return v;
     }
 
@@ -82,13 +81,15 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         super.onActivityCreated(savedInstanceState);
         // if we have a value in the store, load it and then connect
         String ipAddress = "";
+        String brewTemp = "";
         try {
             SharedPreferences prefs = getActivity().getPreferences(Context.MODE_PRIVATE);
-            ipAddress = prefs.getString(WiBeanYunState.UNIT_IP_PREF_KEY, "");
+            ipAddress = prefs.getString(WiBeanYunState.PREF_KEY_UNIT_IP, "");
+            brewTemp = prefs.getString(WiBeanYunState.PREF_KEY_BREW_TEMP, "");
         } catch (Exception e) {
             System.out.println("FATAL Error: sharedPreference for IP Address exists as wrong type???");
         }
-        if (ipAddress != "") {
+        if (!ipAddress.isEmpty()) {
             // populate the dialog
             View v = getView();
             EditText ipText = (EditText) v.findViewById(R.id.etIpAddress);
@@ -97,6 +98,16 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
             if (!mInControl) {
                 btnTakeControl_onClick(v);
             }
+        }
+        // populate the temperature
+        if (!brewTemp.isEmpty()) {
+            ((EditText) getView().findViewById(R.id.et_goalTemperature)).setText(brewTemp);
+        }
+        // ensure the UI is initialized to the right state
+        if (mInControl) {
+            setInControl();
+        } else {
+            setNoControl();
         }
     }
 
@@ -146,14 +157,16 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         //toggle
         // use the current ip value to update the database
         EditText etIp = (EditText) getView().findViewById(R.id.etIpAddress);
-        String currentText = etIp.getText().toString();
-        if (currentText.isEmpty()) {
+        String currentIp = etIp.getText().toString();
+        String currentTemp = ((EditText) getView().findViewById(R.id.et_goalTemperature)).getText().toString();
+        if (currentIp.isEmpty()) {
             mListener.alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
             return;
         }
         // else continue
         SharedPreferences.Editor prefsEdit = getActivity().getPreferences(Context.MODE_PRIVATE).edit();
-        prefsEdit.putString(WiBeanYunState.UNIT_IP_PREF_KEY, currentText);
+        prefsEdit.putString(WiBeanYunState.PREF_KEY_UNIT_IP, currentIp);
+        prefsEdit.putString(WiBeanYunState.PREF_KEY_BREW_TEMP, currentTemp);
         prefsEdit.commit();
         try {
             if (!mInControl) {

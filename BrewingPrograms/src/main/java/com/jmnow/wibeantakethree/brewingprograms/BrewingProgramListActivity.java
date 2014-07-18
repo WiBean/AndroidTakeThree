@@ -3,6 +3,7 @@ package com.jmnow.wibeantakethree.brewingprograms;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -138,13 +139,15 @@ public class BrewingProgramListActivity extends Activity
         return super.onCreateOptionsMenu(menu);
     }
 
-    public boolean refreshIp() {
+    public boolean refreshPrefs() {
         SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
-        String ipAddress = prefs.getString(WiBeanYunState.UNIT_IP_PREF_KEY, "");
+        String ipAddress = prefs.getString(WiBeanYunState.PREF_KEY_UNIT_IP, "");
         if (ipAddress.isEmpty()) {
             return false;
         }
-        return mWibean.setIpAddress(ipAddress);
+        boolean success = true;
+        success &= mWibean.setIpAddress(ipAddress);
+        return success;
     }
 
 
@@ -175,7 +178,7 @@ public class BrewingProgramListActivity extends Activity
 
     public void takeControl() {
         try {
-            AsyncTask<Void, Integer, Boolean> task = new TakeControlTask().execute();
+            AsyncTask<Integer, Integer, Boolean> task = new TakeControlTask().execute();
         } catch (Exception e) {
             System.out.println("takeControl was interrupted: " + e.getLocalizedMessage());
         }
@@ -232,20 +235,24 @@ public class BrewingProgramListActivity extends Activity
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
-        FragmentManager fragmentManager = getFragmentManager();
-        if (position == 0) {
-            fragmentManager.beginTransaction()
-                    .replace(R.id.list_content_container, TakeControlFragment.newInstance(mWibean.inControl()), TAG_TAKECONTROL)
-                    .commit();
-        } else if (position == 1) {
-            fragmentManager.beginTransaction()
-                    .replace(R.id.list_content_container, new BrewingProgramListFragment(), TAG_BREWINGPROGRAMLIST)
-                    .commit();
-        } else {
-            fragmentManager.beginTransaction()
-                    .replace(R.id.list_content_container, AlarmFragment.newInstance(70, 540, 20), TAG_ALARM)
-                    .commit();
+        Fragment fragment;
+        // figure out which was to place
+        switch (position) {
+            case 0:
+                fragment = TakeControlFragment.newInstance(mWibean.inControl());
+                break;
+            default:
+            case 1:
+                fragment = new BrewingProgramListFragment();
+                break;
+            case 2:
+                fragment = AlarmFragment.newInstance(70, 540, 20);
+                break;
         }
+        // do the swap
+        getFragmentManager().beginTransaction()
+                .replace(R.id.list_content_container, fragment, TAG_TAKECONTROL)
+                .commit();
     }
 
     public void onResetSelected() {
@@ -301,14 +308,17 @@ public class BrewingProgramListActivity extends Activity
      * ASYNC TASKS USED TO DO NETWORK AND GUI CALLS APPROPRIATELY
      */
 
-    private class TakeControlTask extends AsyncTask<Void, Integer, Boolean> {
-        protected Boolean doInBackground(Void... voids) {
+    private class TakeControlTask extends AsyncTask<Integer, Integer, Boolean> {
+        protected Boolean doInBackground(Integer... temps) {
+            if (temps.length > 0) {
+                return mWibean.takeControl(temps[0]);
+            }
             return mWibean.takeControl();
         }
 
         protected void onPreExecute() {
             makeBusy("Please wait", "Taking control...");
-            refreshIp();
+            refreshPrefs();
         }
 
         protected void onPostExecute(Boolean result) {
@@ -320,15 +330,22 @@ public class BrewingProgramListActivity extends Activity
                     f.setInControl();
                 }
                 ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_in_control_true);
-            }
-            // if success, enable temperature polling
-            if (mHandler != null) {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        temperaturePollLoop();
-                    }
-                });
+                // if success, enable temperature polling
+                if (mHandler != null) {
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            temperaturePollLoop();
+                        }
+                    });
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            // and flip to the brewing programs
+                            mNavigationDrawerFragment.selectItem(1);
+                        }
+                    });
+                }
             }
             makeNotBusy();
         }
@@ -345,7 +362,7 @@ public class BrewingProgramListActivity extends Activity
         }
         protected void onPreExecute() {
             makeBusy("Please wait", "Returning control...");
-            refreshIp();
+            refreshPrefs();
         }
         protected void onPostExecute(Boolean result) {
             if (!result) {
@@ -368,7 +385,7 @@ public class BrewingProgramListActivity extends Activity
             return builder.toString();
         }
         protected void onPreExecute() {
-            refreshIp();
+            refreshPrefs();
         }
         protected void onPostExecute(String result) {
             if (result.isEmpty()) {
@@ -392,7 +409,7 @@ public class BrewingProgramListActivity extends Activity
 
         protected void onPreExecute() {
             makeBusy("Brewing!", "Generating coffee...");
-            refreshIp();
+            refreshPrefs();
         }
 
         protected void onPostExecute(Boolean result) {

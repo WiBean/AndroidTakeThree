@@ -32,13 +32,35 @@
                 android:text="@string/label_ip_address" />
 
             <EditText
-                android:id="@+id/etIpAddress"
+                android:id="@id/etIpAddress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:hint="@string/hint_ip_address"
                 android:maxLength="15"
                 android:minWidth="160sp"
                 android:singleLine="true" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:labelFor="@+id/et_goalTemperature"
+                android:text="@string/label_goalTemperature" />
+
+            <EditText
+                android:id="@id/et_goalTemperature"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint_goal_temperature"
+                android:maxLength="3"
+                android:minWidth="80sp"
+                android:singleLine="true"
+                android:text="95" />
         </LinearLayout>
 
     </LinearLayout>

@@ -15,17 +15,18 @@ import java.util.concurrent.TimeUnit;
 public class WiBeanYunState {
 
 
-    public static final String UNIT_IP_PREF_KEY = "REMOTE_IP_ADDRESS";
+    public static final String PREF_KEY_UNIT_IP = "REMOTE_IP_ADDRESS";
+    public static final String PREF_KEY_BREW_TEMP = "BREW_TEMP_IDEAL";
     // constants
     public static final int MIN_TEMP = 20;
-    public static final int MAX_TEMP = 99;
+    public static final int MAX_TEMP = 120;
     // httpClient, make one to save resources
     private final OkHttpClient mHttpClient = new OkHttpClient();
     private WiBeanAlarmPack mAlarm = new WiBeanAlarmPack();
     // we are either in control or not.  In control means actively heating towards a goal temp.
     // REMEMBER: that goal temp can be really low, so effectively heating is 'off'
     private boolean mInControl = false;
-    private int mDesiredTemperatureInCelsius = 25;
+    private int mDesiredTemperatureInCelsius = 45;
     private String mDeviceIp;
     private int mRequestTimeoutInSeconds;
 
@@ -45,9 +46,7 @@ public class WiBeanYunState {
 
     // take control of the machine, so WiBean is in charge of heating
     public boolean takeControl(int desiredTemperature) {
-        if ((desiredTemperature < MIN_TEMP) || (desiredTemperature > MAX_TEMP)) {
-            return false;
-        }
+        mDesiredTemperatureInCelsius = Math.min(Math.max(desiredTemperature, MIN_TEMP), MAX_TEMP);
         String targetURL = "http://" + mDeviceIp + "/arduino/heat/" + Integer.valueOf(desiredTemperature).toString();// + targetTempText.getText().toString().trim();
         Request request = new Request.Builder().url(targetURL).build();
         try {
