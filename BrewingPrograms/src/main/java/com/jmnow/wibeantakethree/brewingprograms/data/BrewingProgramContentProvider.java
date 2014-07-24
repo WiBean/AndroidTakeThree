@@ -176,8 +176,8 @@ public class BrewingProgramContentProvider extends ContentProvider {
                 BrewingProgramHelper.COLUMN_ON_THREE, BrewingProgramHelper.COLUMN_OFF_THREE,
                 BrewingProgramHelper.COLUMN_ON_FOUR, BrewingProgramHelper.COLUMN_OFF_FOUR,
                 BrewingProgramHelper.COLUMN_ON_FIVE, BrewingProgramHelper.COLUMN_OFF_FIVE,
-                BrewingProgramHelper.COLUMN_CREATED_AT, BrewingProgramHelper.COLUMN_MODIFIED_AT,
-                BrewingProgramHelper.COLUMN_ORIGINAL_AUTHOR};
+                BrewingProgramHelper.COLUMN_ORIGINAL_AUTHOR, BrewingProgramHelper.COLUMN_SHORT_URL,
+                BrewingProgramHelper.COLUMN_CREATED_AT, BrewingProgramHelper.COLUMN_MODIFIED_AT};
         if (projection != null) {
             HashSet<String> requestedColumns = new HashSet<String>(Arrays.asList(projection));
             HashSet<String> availableColumns = new HashSet<String>(Arrays.asList(available));

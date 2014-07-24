@@ -26,9 +26,11 @@ public class BrewingProgramHelper extends SQLiteOpenHelper {
     public static final String COLUMN_OFF_FOUR = "off_four";
     public static final String COLUMN_ON_FIVE = "on_five";
     public static final String COLUMN_OFF_FIVE = "off_five";
+    public static final String COLUMN_ORIGINAL_AUTHOR = "original_author";
+    public static final String COLUMN_SHORT_URL = "short_url";
     public static final String COLUMN_CREATED_AT = "created_at";
     public static final String COLUMN_MODIFIED_AT = "modified_at";
-    public static final String COLUMN_ORIGINAL_AUTHOR = "original_author";
+
     // DB Version
     private static final int DATABASE_VERSION = 1;
 
@@ -54,9 +56,11 @@ public class BrewingProgramHelper extends SQLiteOpenHelper {
                 COLUMN_OFF_FOUR + " INTEGER, " +
                 COLUMN_ON_FIVE + " INTEGER, " +
                 COLUMN_OFF_FIVE + " INTEGER, " +
+                COLUMN_ORIGINAL_AUTHOR + " TEXT DEFAULT \"\", " +
+                COLUMN_SHORT_URL + " TEXT DEFAULT \"\", " +
                 COLUMN_CREATED_AT + " TEXT DEFAULT current_timestamp, " +
-                COLUMN_MODIFIED_AT + " TEXT DEFAULT current_timestamp, " +
-                COLUMN_ORIGINAL_AUTHOR + " TEXT )";
+                COLUMN_MODIFIED_AT + " TEXT DEFAULT current_timestamp ) ";
+
 
         // create brewing programs table
         db.execSQL(CREATE_BREWINGPROGRAM_TABLE);

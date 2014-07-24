@@ -98,6 +98,8 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
             if (!mInControl) {
                 btnTakeControl_onClick(v);
             }
+        } else {
+            mListener.alertUser("Need setting", getString(R.string.dialog_ip_error_message));
         }
         // populate the temperature
         if (!brewTemp.isEmpty()) {

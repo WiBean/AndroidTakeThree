@@ -6,13 +6,12 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.LoaderManager;
 import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
-import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -29,10 +28,6 @@ import android.widget.TextView;
 
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgram;
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramContentProvider;
-import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramHelper;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * A fragment representing a single BrewingProgram detail screen.
@@ -137,7 +132,9 @@ public class BrewingProgramDetailFragment extends Fragment implements
          * Initializes the CursorLoader. The PROGRAMS_LOADER value is eventually passed
          * to onCreateLoader().
          */
+
         if (!mItem.getId().isEmpty()) {
+            mListener.makeBusy("Loading", "Loading program from database...");
             getLoaderManager().initLoader(PROGRAMS_LOADER, null, this);
         } else {
             updateUiFromItem();
@@ -156,12 +153,6 @@ public class BrewingProgramDetailFragment extends Fragment implements
         MenuItem item = menu.findItem(R.id.menu_item_share);
         // Fetch and store ShareActionProvider
         mShareActionProvider = (ShareActionProvider) item.getActionProvider();
-        // now that we have the share button, hook it up
-        Intent shareIntent = new Intent();
-        shareIntent.setAction(Intent.ACTION_SEND);
-        shareIntent.putExtra(Intent.EXTRA_TEXT, "My Awesome Brew Program #" + getArguments().getString(ARG_ITEM_ID, "UNDEF"));
-        shareIntent.setType("text/plain");
-        setShareIntent(shareIntent);
     }
 
     @Override
@@ -182,8 +173,12 @@ public class BrewingProgramDetailFragment extends Fragment implements
     }
 
     // Call to update the share intent
-    private void setShareIntent(Intent shareIntent) {
+    private void setShareIntent() {
         if (mShareActionProvider != null) {
+            Intent shareIntent = new Intent();
+            shareIntent.setAction(Intent.ACTION_SEND);
+            shareIntent.putExtra(Intent.EXTRA_TEXT, mItem.getName() + " " + mItem.getShortUrl());
+            shareIntent.setType("text/plain");
             mShareActionProvider.setShareIntent(shareIntent);
         }
     }
@@ -235,6 +230,18 @@ public class BrewingProgramDetailFragment extends Fragment implements
         tv.setText(mItem.getCreatedAt());
         tv = (TextView) getView().findViewById(R.id.tv_modifiedAt);
         tv.setText(mItem.getModifiedAt());
+
+        mListener.makeNotBusy();
+        if (mItem.getShortUrl().isEmpty()) {
+            try {
+                AsyncTask<BrewingProgram, Integer, Boolean> task = new ShortenUrlTask().execute(mItem);
+            } catch (Exception e) {
+                System.out.println("ShortenUrlTask was interrupted: " + e.getLocalizedMessage());
+            }
+        } else {
+            setShareIntent();
+        }
+
     }
 
     private void updateItemFromUi() {
@@ -368,54 +375,9 @@ public class BrewingProgramDetailFragment extends Fragment implements
     private void saveOrUpdateRecord(View v) {
         // move the UI into our object first
         updateItemFromUi();
-        // Defines an object to contain the updated values
-        ContentValues updateValues = new ContentValues();
-        // Sets the updated value and updates the selected words.
-        updateValues.put(BrewingProgramHelper.COLUMN_NAME, mItem.getName());
-        updateValues.put(BrewingProgramHelper.COLUMN_DESCRIPTION, mItem.getDescription());
-
-        // we can't use the SQLite datetime() function via the ContentValues object, so construct
-        // the string ourselves
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date date = new Date();
-        updateValues.put(BrewingProgramHelper.COLUMN_MODIFIED_AT, dateFormat.format(date));
-
-        Integer[] onTimes = mItem.getOnTimes();
-        Integer[] offTimes = mItem.getOffTimes();
-        updateValues.put(BrewingProgramHelper.COLUMN_ON_ONE, onTimes[0]);
-        updateValues.put(BrewingProgramHelper.COLUMN_OFF_ONE, offTimes[0]);
-        updateValues.put(BrewingProgramHelper.COLUMN_ON_TWO, onTimes[1]);
-        updateValues.put(BrewingProgramHelper.COLUMN_OFF_TWO, offTimes[1]);
-        updateValues.put(BrewingProgramHelper.COLUMN_ON_THREE, onTimes[2]);
-        updateValues.put(BrewingProgramHelper.COLUMN_OFF_THREE, offTimes[2]);
-        updateValues.put(BrewingProgramHelper.COLUMN_ON_FOUR, onTimes[3]);
-        updateValues.put(BrewingProgramHelper.COLUMN_OFF_FOUR, offTimes[3]);
-        updateValues.put(BrewingProgramHelper.COLUMN_ON_FIVE, onTimes[4]);
-        updateValues.put(BrewingProgramHelper.COLUMN_OFF_FIVE, offTimes[4]);
-
-        // catch results
-        int rowsUpdated = 0;
-        Uri newRow;
-        if (mItem.getId().isEmpty()) {
-            // insert
-            newRow = getActivity().getContentResolver().insert(
-                    BrewingProgramContentProvider.CONTENT_URI,  // the user dictionary content URI
-                    updateValues); // the columns to update
-            // on successful create, change the Create button to a save button and update
-            // the local item
-            if (!newRow.toString().toString().isEmpty()) {
-                //we are creating a fresh one
-                ((Button) getView().findViewById(R.id.btn_saveProgram)).setText(R.string.action_saveProgram);
-                mItem.setId(newRow.toString());
-            }
-        } else {
-            // update
-            rowsUpdated = getActivity().getContentResolver().update(
-                    ContentUris.withAppendedId(BrewingProgramContentProvider.CONTENT_URI, Long.parseLong(mItem.getId())),  // the user dictionary content URI
-                    updateValues,                       // the columns to update
-                    null, // the column to select on
-                    null// the value to compare to
-            );
+        if (mListener.saveOrCreateItem(mItem)) {
+            // on successful create, change the Create button to a save button
+            ((Button) getActivity().findViewById(R.id.btn_saveProgram)).setText(R.string.action_saveProgram);
         }
         // enable the delete button
         if (!mItem.getId().isEmpty()) {
@@ -469,7 +431,11 @@ public class BrewingProgramDetailFragment extends Fragment implements
                 on_discardChangesClicked(v);
                 break;
             case R.id.btn_saveProgram:
-                saveOrUpdateRecord(v);
+                try {
+                    AsyncTask<BrewingProgram, Integer, Boolean> task = new ShortenUrlTask().execute(mItem);
+                } catch (Exception e) {
+                    System.out.println("ShortenUrlTask was interrupted: " + e.getLocalizedMessage());
+                }
                 break;
             case R.id.btn_deleteProgram:
                 on_deleteProgram();
@@ -526,6 +492,9 @@ public class BrewingProgramDetailFragment extends Fragment implements
             offTimes[4] = cursor.getInt((k++));
             mItem.setOnTimes(onTimes);
             mItem.setOffTimes(offTimes);
+            // skip one for the original author
+            k++;
+            mItem.setShortUrl(cursor.getString(k++));
             mItem.setCreatedAt(cursor.getString(k++));
             mItem.setModifiedAt(cursor.getString(k++));
         } catch (Exception e) {
@@ -546,5 +515,32 @@ public class BrewingProgramDetailFragment extends Fragment implements
 
     public interface BrewingProgramDetailCallbacks {
         void brewProgram(BrewingProgram theProgram);
+
+        void makeBusy(final CharSequence title, final CharSequence message);
+
+        void makeNotBusy();
+
+        boolean saveOrCreateItem(BrewingProgram aProgram);
+    }
+
+    private class ShortenUrlTask extends AsyncTask<BrewingProgram, Integer, Boolean> {
+        protected Boolean doInBackground(BrewingProgram... programs) {
+            Boolean success = true;
+            for (int k = 0; k < programs.length; ++k) {
+                success &= programs[k].shortenUrl();
+            }
+            return success;
+        }
+
+        protected void onPreExecute() {
+            mListener.makeBusy("Please wait", "Shortening URL...");
+        }
+
+        protected void onPostExecute(Boolean result) {
+            // now that we have the item, hook up the share button
+            setShareIntent();
+            saveOrUpdateRecord(null);
+            mListener.makeNotBusy();
+        }
     }
 }

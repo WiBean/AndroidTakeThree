@@ -6,8 +6,12 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.ProgressDialog;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,14 +20,19 @@ import android.view.Menu;
 import android.widget.TextView;
 
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgram;
+import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramContentProvider;
+import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramHelper;
 import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanYunState;
 import com.squareup.okhttp.OkHttpClient;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * An activity representing a list of BrewingPrograms. This activity
  * has different presentations for handset and tablet-size devices. On
  * handsets, the activity presents a list of items, which when touched,
- * lead to a {@link BrewingProgramDetailActivity} representing
+ * lead to a {@link BrewingProgramDetailFragment} representing
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
  * <p/>
@@ -98,8 +107,37 @@ public class BrewingProgramListActivity extends Activity
         mHttpClient = new OkHttpClient();
 
         // TODO: If exposing deep links into your app, handle intents here.
+        Intent intent = getIntent();
+        if (!parseIntent(intent)) {
+            mNavigationDrawerFragment.selectItem(0);
+        }
     }
 
+    // returns true if action taken
+    private boolean parseIntent(Intent intent) {
+        String action = intent.getAction();
+        Uri data = intent.getData();
+        if (action.equals("android.intent.action.VIEW")) {
+            // parse appropriately different versions
+            if (data.getScheme().equalsIgnoreCase("http")) {
+                if (data.getHost().equalsIgnoreCase("www.wibean.com")) {
+                    if (data.getPath().startsWith("/brewingProgram/v1")) {
+                        // parse the program.
+                        System.out.println(data.getQuery());
+                        BrewingProgram newProg = BrewingProgram.fromUri(data);
+                        if (insertOrUpdateBrewingProgram(newProg)) {
+                            // navigate to the program list so the backstack works
+                            onNavigationDrawerItemSelected(1);
+                            // load the item
+                            onItemSelected(newProg.getId());
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     public void onSectionAttached(int number) {
         /**
@@ -111,6 +149,7 @@ public class BrewingProgramListActivity extends Activity
                 mTitle = getString(R.string.title_takeControl);
                 break;
             case 1:
+                mTitle = getString(R.string.title_brewingprogram_list);
                 mTitle = getString(R.string.title_brewingprogram_list);
                 break;
             case 2:
@@ -224,6 +263,60 @@ public class BrewingProgramListActivity extends Activity
             );
         }
     }
+
+    public boolean insertOrUpdateBrewingProgram(BrewingProgram theProgram) {
+        // Defines an object to contain the updated values
+        ContentValues updateValues = new ContentValues();
+        // Sets the updated value and updates the selected words.
+        updateValues.put(BrewingProgramHelper.COLUMN_NAME, theProgram.getName());
+        updateValues.put(BrewingProgramHelper.COLUMN_DESCRIPTION, theProgram.getDescription());
+        // we can't use the SQLite datetime() function via the ContentValues object, so construct
+        // the string ourselves
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date();
+        updateValues.put(BrewingProgramHelper.COLUMN_MODIFIED_AT, dateFormat.format(date));
+
+        Integer[] onTimes = theProgram.getOnTimes();
+        Integer[] offTimes = theProgram.getOffTimes();
+        updateValues.put(BrewingProgramHelper.COLUMN_ON_ONE, onTimes[0]);
+        updateValues.put(BrewingProgramHelper.COLUMN_OFF_ONE, offTimes[0]);
+        updateValues.put(BrewingProgramHelper.COLUMN_ON_TWO, onTimes[1]);
+        updateValues.put(BrewingProgramHelper.COLUMN_OFF_TWO, offTimes[1]);
+        updateValues.put(BrewingProgramHelper.COLUMN_ON_THREE, onTimes[2]);
+        updateValues.put(BrewingProgramHelper.COLUMN_OFF_THREE, offTimes[2]);
+        updateValues.put(BrewingProgramHelper.COLUMN_ON_FOUR, onTimes[3]);
+        updateValues.put(BrewingProgramHelper.COLUMN_OFF_FOUR, offTimes[3]);
+        updateValues.put(BrewingProgramHelper.COLUMN_ON_FIVE, onTimes[4]);
+        updateValues.put(BrewingProgramHelper.COLUMN_OFF_FIVE, offTimes[4]);
+        updateValues.put(BrewingProgramHelper.COLUMN_SHORT_URL, theProgram.getShortUrl());
+
+        // catch results
+        int rowsUpdated = 0;
+        Uri newRow;
+        if (theProgram.getId().isEmpty()) {
+            // insert
+            newRow = this.getContentResolver().insert(
+                    BrewingProgramContentProvider.CONTENT_URI,  // the user dictionary content URI
+                    updateValues); // the columns to update
+            String resultAsString = newRow.toString();
+            if (!resultAsString.contains("-1")) {
+                // success!
+                theProgram.setId(resultAsString.substring(resultAsString.lastIndexOf("/") + 1));
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            // update
+            rowsUpdated = this.getContentResolver().update(
+                    ContentUris.withAppendedId(BrewingProgramContentProvider.CONTENT_URI, Long.parseLong(theProgram.getId())),  // the user dictionary content URI
+                    updateValues,                       // the columns to update
+                    null, // the column to select on
+                    null// the value to compare to
+            );
+            return (rowsUpdated > 0);
+        }
+    }
     // ********************
     // INTERFACES
     // ********************
@@ -235,7 +328,7 @@ public class BrewingProgramListActivity extends Activity
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
-        Fragment fragment;
+        Fragment fragment = null;
         // figure out which was to place
         switch (position) {
             case 0:
@@ -249,10 +342,15 @@ public class BrewingProgramListActivity extends Activity
                 fragment = AlarmFragment.newInstance(70, 540, 20);
                 break;
         }
-        // do the swap
-        getFragmentManager().beginTransaction()
-                .replace(R.id.list_content_container, fragment, TAG_TAKECONTROL)
-                .commit();
+        if (fragment != null) {
+            FragmentManager fm = getFragmentManager();
+            // clean  up the back stack
+            fm.popBackStack("menu_item_create_new", FragmentManager.POP_BACK_STACK_INCLUSIVE);
+            // do the swap
+            fm.beginTransaction()
+                    .replace(R.id.list_content_container, fragment, TAG_TAKECONTROL)
+                    .commit();
+        }
     }
 
     public void onResetSelected() {
@@ -272,7 +370,7 @@ public class BrewingProgramListActivity extends Activity
         frag.setArguments(args);
         fragmentManager.beginTransaction()
                 .replace(R.id.list_content_container, frag, TAG_BREWINGPROGRAMDETAIL)
-                .addToBackStack(null)
+                .addToBackStack("brew_program_detail_show")
                 .commit();
     }
 
@@ -302,6 +400,10 @@ public class BrewingProgramListActivity extends Activity
             System.out.println("brewProgram was interrupted: " + e.getLocalizedMessage());
             success = false;
         }
+    }
+
+    public boolean saveOrCreateItem(BrewingProgram aProgram) {
+        return insertOrUpdateBrewingProgram(aProgram);
     }
 
     /**
@@ -368,9 +470,14 @@ public class BrewingProgramListActivity extends Activity
             if (!result) {
                 alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
             } else {
-                TakeControlFragment f = (TakeControlFragment) getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
-                if (f != null) {
-                    f.setNoControl();
+                try {
+                    // if we have a TakeControl fragment, update the UI for proper consistency
+                    TakeControlFragment f = (TakeControlFragment) getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
+                    if (f != null) {
+                        f.setNoControl();
+                    }
+                } catch (Exception e) {
+                    // if it fails, no worries
                 }
                 ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_in_control_false);
             }

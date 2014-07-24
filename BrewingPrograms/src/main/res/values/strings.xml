@@ -15,18 +15,18 @@
 
     <string-array name="nav_drawer_items">
         <item>Settings</item>
-        <item>Brewing Programs</item>
+        <item>Brew!</item>
         <item>Pre-Heat Alarm</item>
     </string-array>
     <!-- Nav Drawer List Item Icons -->
     <!-- Keep them in order as the titles are in -->
     <array name="nav_drawer_icons">
         <item>@drawable/ic_home</item>
-        <item>@drawable/ic_home</item>
-        <item>@drawable/ic_home</item>
+        <item>@drawable/coffee_cup_icon</item>
+        <item>@drawable/ic_whats_hot</item>
     </array>
 
-    <string name="title_takeControl">Take Control</string>
+    <string name="title_takeControl">Settings</string>
     <string name="title_brewingprogram_list">Brewing Programs</string>
     <string name="title_wakeAlarm">Automatic Pre-Heat</string>
     <string name="title_brewingprogram_detail">BrewingProgram Detail</string>
@@ -50,7 +50,7 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="hint_goal_temperature">95 °C</string>
     <string name="label_goalTemperature">Goal Temp (°C):</string>
-    <string name="filter_title_viewBrewingProgram">Import Brewing Program</string>
+    <string name="filter_title_viewBrewingProgram">WiBean Brewing Program</string>
     <string name="description_list_item_icon">List item icon</string>
 
 
