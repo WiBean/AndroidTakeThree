@@ -14,7 +14,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanYunState;
+import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanSparkState;
 
 
 /**
@@ -26,9 +26,9 @@ import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanYunState;
  * create an instance of this fragment.
  */
 public class TakeControlFragment extends Fragment implements View.OnClickListener {
-    private static final String ARG_IN_CONTROL = "in_control";
+    private static final String ARG_CREDENTIALS_VALID = "in_control";
 
-    private boolean mInControl = false;
+    private boolean mCredentialsValid = false;
 
     private TakeControlFragmentListener mListener;
 
@@ -47,7 +47,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     public static TakeControlFragment newInstance(boolean inControl) {
         TakeControlFragment fragment = new TakeControlFragment();
         Bundle args = new Bundle();
-        args.putBoolean(ARG_IN_CONTROL, inControl);
+        args.putBoolean(ARG_CREDENTIALS_VALID, inControl);
         fragment.setArguments(args);
         return fragment;
     }
@@ -57,7 +57,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         if (getArguments() != null) {
-            mInControl = getArguments().getBoolean(ARG_IN_CONTROL, false);
+            mCredentialsValid = getArguments().getBoolean(ARG_CREDENTIALS_VALID, false);
         }
     }
 
@@ -71,7 +71,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         // hookup the button here in the Fragment
         // (onClicks generated from buttons in Fragments get sent to their Activity
         // removing modularity)
-        Button b = (Button) v.findViewById(R.id.btnTakeControl);
+        Button b = (Button) v.findViewById(R.id.btn_testCredentials);
         b.setOnClickListener(this);
         return v;
     }
@@ -80,36 +80,56 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         // if we have a value in the store, load it and then connect
-        String ipAddress = "";
+        String deviceId = "";
+        String accessToken = "";
         String brewTemp = "";
         try {
             SharedPreferences prefs = getActivity().getPreferences(Context.MODE_PRIVATE);
-            ipAddress = prefs.getString(WiBeanYunState.PREF_KEY_UNIT_IP, "");
-            brewTemp = prefs.getString(WiBeanYunState.PREF_KEY_BREW_TEMP, "");
+            deviceId = prefs.getString(WiBeanSparkState.PREF_KEY_DEVICE_ID, "");
+            accessToken = prefs.getString(WiBeanSparkState.PREF_KEY_ACCESS_TOKEN, "");
+            brewTemp = prefs.getString(WiBeanSparkState.PREF_KEY_BREW_TEMP, "");
         } catch (Exception e) {
-            System.out.println("FATAL Error: sharedPreference for IP Address exists as wrong type???");
+            System.out.println("FATAL Error: sharedPreference for credentials exists as wrong type???");
         }
-        if (!ipAddress.isEmpty()) {
+        boolean testCredentials = false;
+        boolean needCredential = false;
+        if (!deviceId.isEmpty()) {
             // populate the dialog
             View v = getView();
-            EditText ipText = (EditText) v.findViewById(R.id.etIpAddress);
-            ipText.setText(ipAddress);
+            EditText ipText = (EditText) v.findViewById(R.id.et_deviceId);
+            ipText.setText(deviceId);
             // try auto connect if we aren't in control
-            if (!mInControl) {
-                btnTakeControl_onClick(v);
-            }
+            testCredentials = true;
         } else {
+            needCredential = true;
+        }
+        if (!accessToken.isEmpty()) {
+            // populate the dialog
+            View v = getView();
+            EditText ipText = (EditText) v.findViewById(R.id.et_accessToken);
+            ipText.setText(accessToken);
+            // try auto connect if we aren't in control
+            testCredentials = true;
+        } else {
+            needCredential = true;
+        }
+        if (needCredential) {
             mListener.alertUser("Need setting", getString(R.string.dialog_ip_error_message));
+        }
+        if (testCredentials) {
+            if (!mCredentialsValid) {
+                btn_testCredentials_onClick(getView());
+            }
         }
         // populate the temperature
         if (!brewTemp.isEmpty()) {
             ((EditText) getView().findViewById(R.id.et_goalTemperature)).setText(brewTemp);
         }
         // ensure the UI is initialized to the right state
-        if (mInControl) {
-            setInControl();
+        if (mCredentialsValid) {
+            setCredentialsValid();
         } else {
-            setNoControl();
+            setCredentialsInvalid();
         }
     }
 
@@ -127,55 +147,44 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btnTakeControl:
-                btnTakeControl_onClick(v);
+            case R.id.btn_testCredentials:
+                btn_testCredentials_onClick(v);
                 break;
         }
     }
 
 
-    public void setInControl() {
-        mInControl = true;
-        View v = getView();
-        if (v != null) {
-            Button b = (Button) v.findViewById(R.id.btnTakeControl);
-            b.setCompoundDrawablesWithIntrinsicBounds(null, getResources().getDrawable(R.drawable.control_button_hot_selector), null, null);
-            b.setText(R.string.action_release_control);
-        }
+    public void setCredentialsValid() {
+        mCredentialsValid = true;
     }
 
-    public void setNoControl() {
-        mInControl = false;
-        View v = getView();
-        if (v != null) {
-            Button b = (Button) v.findViewById(R.id.btnTakeControl);
-            b.setCompoundDrawablesWithIntrinsicBounds(null, getResources().getDrawable(R.drawable.control_button_cold_selector), null, null);
-            b.setText(R.string.action_take_control);
-        }
+    public void setCredentialsInvalid() {
+        mCredentialsValid = false;
     }
 
 
-    public void btnTakeControl_onClick(View v) {
+    public void btn_testCredentials_onClick(View v) {
         //toggle
-        // use the current ip value to update the database
-        EditText etIp = (EditText) getView().findViewById(R.id.etIpAddress);
-        String currentIp = etIp.getText().toString();
+        // use the current values to update the database
+        EditText etDeviceId = (EditText) getView().findViewById(R.id.et_deviceId);
+        String deviceId = etDeviceId.getText().toString();
+        EditText etAccessToken = (EditText) getView().findViewById(R.id.et_accessToken);
+        String accessToken = etAccessToken.getText().toString();
+
         String currentTemp = ((EditText) getView().findViewById(R.id.et_goalTemperature)).getText().toString();
-        if (currentIp.isEmpty()) {
+        if (deviceId.isEmpty() || accessToken.isEmpty()) {
             mListener.alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+            mCredentialsValid = false;
             return;
         }
         // else continue
         SharedPreferences.Editor prefsEdit = getActivity().getPreferences(Context.MODE_PRIVATE).edit();
-        prefsEdit.putString(WiBeanYunState.PREF_KEY_UNIT_IP, currentIp);
-        prefsEdit.putString(WiBeanYunState.PREF_KEY_BREW_TEMP, currentTemp);
+        prefsEdit.putString(WiBeanSparkState.PREF_KEY_DEVICE_ID, deviceId);
+        prefsEdit.putString(WiBeanSparkState.PREF_KEY_ACCESS_TOKEN, accessToken);
+        prefsEdit.putString(WiBeanSparkState.PREF_KEY_BREW_TEMP, currentTemp);
         prefsEdit.commit();
         try {
-            if (!mInControl) {
-                mListener.takeControl();
-            } else {
-                mListener.returnControl();
-            }
+            mListener.testCredentials();
         } catch (Exception e) {
             //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
             System.out.println("TakeControl Failed: " + e.getMessage() + ' ' + e.getClass());
@@ -210,9 +219,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     public interface TakeControlFragmentListener {
         public void alertUser(String title, String message);
 
-        public void takeControl();
-
-        public void returnControl();
+        public void testCredentials();
     }
 
 }

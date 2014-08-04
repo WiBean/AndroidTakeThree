@@ -84,7 +84,7 @@ public class WiBeanYunState {
             }
         } catch (Exception e) {
             //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
-            System.out.println("returnControl Failed: " + e.getMessage() + ' ' + e.getClass());
+            System.out.println("toggleHeating Failed: " + e.getMessage() + ' ' + e.getClass());
         }
         return false;
     }
@@ -107,7 +107,7 @@ public class WiBeanYunState {
             }
         } catch (Exception e) {
             //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
-            System.out.println("getTemperature Failed: " + e.getMessage() + ' ' + e.getClass());
+            System.out.println("getHeadTemperature Failed: " + e.getMessage() + ' ' + e.getClass());
         }
         // if we get here, something went wrong
         emptyBuilderForTemperatureReturn.append("ERR");

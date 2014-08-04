@@ -17,11 +17,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.widget.DrawerLayout;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.TextView;
 
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgram;
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramContentProvider;
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramHelper;
+import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanSparkState;
 import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanYunState;
 import com.squareup.okhttp.OkHttpClient;
 
@@ -74,7 +76,7 @@ public class BrewingProgramListActivity extends Activity
     // used to store pointer to a progress dialog
     private ProgressDialog mProgess;
     // handles the state and communication with the WiBean
-    private WiBeanYunState mWibean = new WiBeanYunState();
+    private WiBeanSparkState mWibean = new WiBeanSparkState();
 
     //*******************
     //* LIFECYCLE METHODS
@@ -167,35 +169,47 @@ public class BrewingProgramListActivity extends Activity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        boolean success = super.onCreateOptionsMenu(menu);
+        // always load the global menu
+        getMenuInflater().inflate(R.menu.global, menu);
         if (!mNavigationDrawerFragment.isDrawerOpen()) {
-            // Only show items in the action bar relevant to this screen
-            // if the drawer is not showing. Otherwise, let the drawer
-            // decide what to show in the action bar.
-            getMenuInflater().inflate(R.menu.main, menu);
             restoreActionBar();
-            return true;
         }
-        return super.onCreateOptionsMenu(menu);
+
+        try {
+            MenuItem item = menu.findItem(R.id.menu_toggle_heating);
+            if (mWibean.isHeating()) {
+                item.setTitle(R.string.action_toggle_heating_off);
+            } else {
+                item.setTitle(R.string.action_toggle_heating_on);
+            }
+        } catch (Exception e) {
+            System.out.println(e.toString());
+        }
+
+
+        return success;
     }
 
     public boolean refreshPrefs() {
         SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
-        String ipAddress = prefs.getString(WiBeanYunState.PREF_KEY_UNIT_IP, "");
-        if (ipAddress.isEmpty()) {
+        String deviceId = prefs.getString(WiBeanSparkState.PREF_KEY_DEVICE_ID, "");
+        String accessToken = prefs.getString(WiBeanSparkState.PREF_KEY_ACCESS_TOKEN, "");
+        if (deviceId.isEmpty() || accessToken.isEmpty()) {
             return false;
         }
         boolean success = true;
-        success &= mWibean.setIpAddress(ipAddress);
+        success &= mWibean.setSparkDeviceId(deviceId);
+        success &= mWibean.setSparkAccessToken(accessToken);
         return success;
     }
-
 
     //*************
     //* INTERFACES
     //*************
 
     /**
-     * INTERFACE FOR takeControl fragment
+     * INTERFACE FOR testCredentials fragment
      */
 
     /**
@@ -215,19 +229,29 @@ public class BrewingProgramListActivity extends Activity
         dialog.show();
     }
 
-    public void takeControl() {
+    public void testCredentials() {
+        Boolean success = false;
         try {
-            AsyncTask<Integer, Integer, Boolean> task = new TakeControlTask().execute();
+            AsyncTask<Void, Integer, String> task = new CheckCredentialsTask().execute();
         } catch (Exception e) {
-            System.out.println("takeControl was interrupted: " + e.getLocalizedMessage());
+            System.out.println("testCredentials was interrupted: " + e.getLocalizedMessage());
+            success = false;
         }
     }
 
-    public void returnControl() {
-        try {
-            AsyncTask<Void, Integer, Boolean> task = new ReturnControlTask().execute();
-        } catch (Exception e) {
-            System.out.println("returnControl was interrupted: " + e.getLocalizedMessage());
+    public void toggleHeating() {
+        if (mWibean.isHeating()) {
+            try {
+                AsyncTask<Void, Integer, Boolean> task = new MakeHibernateTask().execute();
+            } catch (Exception e) {
+                System.out.println("toggleHeating was interrupted: " + e.getLocalizedMessage());
+            }
+        } else {
+            try {
+                AsyncTask<Integer, Integer, Boolean> task = new MakeHeatTask().execute();
+            } catch (Exception e) {
+                System.out.println("testCredentials was interrupted: " + e.getLocalizedMessage());
+            }
         }
     }
 
@@ -251,17 +275,15 @@ public class BrewingProgramListActivity extends Activity
     }
 
     public void temperaturePollLoop() {
-        if (mWibean.inControl()) {
-            AsyncTask<Void, Integer, String> task = new QueryTemperatureTask().execute();
-            mHandler.postDelayed(new Runnable() {
-                                     @Override
-                                     public void run() {
-                                         temperaturePollLoop();
-                                     }
-                                 },
-                    500
-            );
-        }
+        AsyncTask<Void, Integer, String> task = new QueryHeadTemperatureTask().execute();
+        mHandler.postDelayed(new Runnable() {
+                                 @Override
+                                 public void run() {
+                                     temperaturePollLoop();
+                                 }
+                             },
+                1000
+        );
     }
 
     public boolean insertOrUpdateBrewingProgram(BrewingProgram theProgram) {
@@ -332,7 +354,7 @@ public class BrewingProgramListActivity extends Activity
         // figure out which was to place
         switch (position) {
             case 0:
-                fragment = TakeControlFragment.newInstance(mWibean.inControl());
+                fragment = TakeControlFragment.newInstance(mWibean.isHeating());
                 break;
             default:
             case 1:
@@ -353,8 +375,12 @@ public class BrewingProgramListActivity extends Activity
         }
     }
 
-    public void onResetSelected() {
-        returnControl();
+    public boolean isHeating() {
+        return mWibean.isHeating();
+    }
+
+    public void onHeatToggleSelected() {
+        toggleHeating();
     }
 
 
@@ -410,85 +436,63 @@ public class BrewingProgramListActivity extends Activity
      * ASYNC TASKS USED TO DO NETWORK AND GUI CALLS APPROPRIATELY
      */
 
-    private class TakeControlTask extends AsyncTask<Integer, Integer, Boolean> {
+    private class MakeHeatTask extends AsyncTask<Integer, Integer, Boolean> {
         protected Boolean doInBackground(Integer... temps) {
             if (temps.length > 0) {
-                return mWibean.takeControl(temps[0]);
+                return mWibean.makeHeat(temps[0]);
+            } else {
+                return mWibean.makeHeat();
             }
-            return mWibean.takeControl();
         }
-
         protected void onPreExecute() {
-            makeBusy("Please wait", "Taking control...");
+            makeBusy("Please wait", getString(R.string.action_activatingHeat));
             refreshPrefs();
         }
-
         protected void onPostExecute(Boolean result) {
             if (!result) {
                 alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
             } else {
-                TakeControlFragment f = (TakeControlFragment) getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
-                if (f != null) {
-                    f.setInControl();
-                }
-                ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_in_control_true);
-                // if success, enable temperature polling
-                if (mHandler != null) {
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            temperaturePollLoop();
-                        }
-                    });
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            // and flip to the brewing programs
-                            mNavigationDrawerFragment.selectItem(1);
-                        }
-                    });
-                }
+                // heat toggle text update is already handled by NavDrawerFragment, don't do it here
+                // update status text
+                ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_control_status_heating);
             }
+            // force a rebuild of the button text
+            invalidateOptionsMenu();
             makeNotBusy();
         }
     }
 
-    private class ReturnControlTask extends AsyncTask<Void, Integer, Boolean> {
+    private class MakeHibernateTask extends AsyncTask<Void, Integer, Boolean> {
         protected Boolean doInBackground(Void... voids) {
-            if (mWibean.inControl()) {
-                return mWibean.returnControl();
+            if (mWibean.isHeating()) {
+                return mWibean.makeHibernate();
             } else {
-                mWibean.returnControl(); // always send the command for safety
+                mWibean.makeHibernate(); // always send the command for safety
                 return true; //already not in-control, so report success for the user
             }
         }
         protected void onPreExecute() {
-            makeBusy("Please wait", "Returning control...");
+            makeBusy("Please wait", getString(R.string.action_disablingHeat));
             refreshPrefs();
         }
         protected void onPostExecute(Boolean result) {
             if (!result) {
                 alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
             } else {
-                try {
-                    // if we have a TakeControl fragment, update the UI for proper consistency
-                    TakeControlFragment f = (TakeControlFragment) getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
-                    if (f != null) {
-                        f.setNoControl();
-                    }
-                } catch (Exception e) {
-                    // if it fails, no worries
-                }
-                ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_in_control_false);
+                // heat toggle text update is already handled by NavDrawerFragment, don't do it here
+                // update status text
+                ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_control_status_cooling);
             }
+            // force a rebuild of the button text
+            invalidateOptionsMenu();
             makeNotBusy();
         }
     }
 
-    private class QueryTemperatureTask extends AsyncTask<Void, Integer, String> {
+    private class QueryHeadTemperatureTask extends AsyncTask<Void, Integer, String> {
         protected String doInBackground(Void... voids) {
             StringBuilder builder = new StringBuilder();
-            mWibean.getTemperature(builder);
+            mWibean.getHeadTemperature(builder);
             return builder.toString();
         }
         protected void onPreExecute() {
@@ -498,6 +502,7 @@ public class BrewingProgramListActivity extends Activity
             if (result.isEmpty()) {
                 // do nothing
             } else {
+                // truncate to 1 decimal place
                 TextView v = (TextView) findViewById(R.id.tv_headTemperature);
                 v.setText(result);
             }
@@ -522,6 +527,59 @@ public class BrewingProgramListActivity extends Activity
         protected void onPostExecute(Boolean result) {
             if (!result) {
                 alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+            }
+            makeNotBusy();
+        }
+    }
+
+    private class CheckCredentialsTask extends AsyncTask<Void, Integer, String> {
+        protected String doInBackground(Void... voids) {
+            StringBuilder builder = new StringBuilder();
+            mWibean.getHeadTemperature(builder);
+            return builder.toString();
+        }
+
+        protected void onPreExecute() {
+            refreshPrefs();
+        }
+
+        protected void onPostExecute(String result) {
+            try {
+                // if we have a TakeControl fragment, update the UI for proper consistency
+                TakeControlFragment f = (TakeControlFragment) getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
+                if (f != null) {
+                    if (result.equalsIgnoreCase("ERR")) {
+                        f.setCredentialsInvalid();
+                        alertUser("Credentials Invalid", "");
+                        // update Control status text
+                        TextView v = (TextView) findViewById(R.id.tv_inControlLabel);
+                        v.setText(R.string.heading_control_status_bad);
+                    } else {
+                        f.setCredentialsValid();
+                        // if success...
+                        if (mHandler != null) {
+                            // enable temperature polling
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    temperaturePollLoop();
+                                }
+                            });
+                            // and flip to the brewing programs
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mNavigationDrawerFragment.selectItem(1);
+                                }
+                            });
+                        }
+                        // update Control status text
+                        TextView v = (TextView) findViewById(R.id.tv_inControlLabel);
+                        v.setText(R.string.heading_control_status_cooling);
+                    }
+                }
+            } catch (Exception e) {
+                // if it fails, no worries
             }
             makeNotBusy();
         }

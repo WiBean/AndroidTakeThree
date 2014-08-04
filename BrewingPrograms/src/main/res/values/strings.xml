@@ -3,7 +3,9 @@
 
     <string name="app_name">WiBean</string>
 
-    <string name="action_reset">RESET</string>
+    <string name="action_toggle_heating_on">Heat!</string>
+    <string name="action_toggle_heating_off">Sleep</string>
+
     <string name="action_settings">Settings</string>
     <string name="action_brew">Brew!</string>
     <string name="action_take_control">Take Control!</string>
@@ -12,6 +14,9 @@
     <string name="action_discardDeleteProgram">Delete Program!</string>
     <string name="action_saveProgram">Save Changes</string>
     <string name="action_createProgram">Create!</string>
+
+    <string name="action_activatingHeat">Activating Heat...</string>
+    <string name="action_disablingHeat">Hibernating...</string>
 
     <string-array name="nav_drawer_items">
         <item>Settings</item>
@@ -34,8 +39,11 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="heading_in_control_true">We have control!</string>
-    <string name="heading_in_control_false">Uncontrolled</string>
+    <string name="heading_control_status_cooling">Cooling</string>
+    <string name="heading_control_status_bad">No Connection</string>
+    <string name="heading_control_status_brewing">Brewing!</string>
+    <string name="heading_control_status_heating">Heating</string>
+
     <string name="heading_program_unit_description">*All times given in units of 100ms</string>
     <string name="heading_example_program_name">Example Program Title</string>
     <string name="heading_example_program_description">The greatest example program ever.</string>
@@ -44,14 +52,16 @@
     <string name="label_ip_address">WiBean IP: </string>
     <string name="hint_ip_address">192.168.1.107</string>
     <string name="dialog_ip_error_message">Could not connect to the WiBean.\n
-            Please check the IP address.\n
-            Note: IPV6 is not supported.</string>
+            Please check the access credentials.</string>
     <string name="dialog_ip_error_title">Connection Error</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="hint_goal_temperature">95 °C</string>
     <string name="label_goalTemperature">Goal Temp (°C):</string>
     <string name="filter_title_viewBrewingProgram">WiBean Brewing Program</string>
     <string name="description_list_item_icon">List item icon</string>
+    <string name="label_accessToken">Access Token</string>
+    <string name="label_device_id">Device ID</string>
+    <string name="action_testCredentials">Test Credentials</string>
 
 
 </resources>

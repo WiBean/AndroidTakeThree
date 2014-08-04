@@ -215,6 +215,20 @@ public class BrewingProgram {
         }
     }
 
+    public URI toSparkUri(String deviceId, String accessToken) {
+        StringBuilder queryString = new StringBuilder();
+        for (int k = 0; k < NUMONOFFTIMES; ++k) {
+            queryString.append("onF[").append(k).append("]=").append(onTimes[k]).append("&");
+            queryString.append("offF[").append(k).append("]=").append(offTimes[k]).append("&");
+        }
+        try {
+            return new URI("http", "www.wibean.com", "/brewingProgram/v1", queryString.toString(), null);
+        } catch (Exception e) {
+            System.out.println("BrewingProgram::toUri failed: " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+
     private void parseNameValuePair(NameValuePair thePair) {
         final String name = thePair.getName();
         switch (name) {

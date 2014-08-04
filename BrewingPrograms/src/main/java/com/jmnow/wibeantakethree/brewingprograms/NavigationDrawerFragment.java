@@ -141,7 +141,7 @@ public class NavigationDrawerFragment extends Fragment {
         mFragmentContainerView = getActivity().findViewById(fragmentId);
         mDrawerLayout = drawerLayout;
 
-        // set a custom shadow that overlays the main content when the drawer opens
+        // set a custom shadow that overlays the nav_drawer content when the drawer opens
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         // set up the drawer's list view with items and click listener
 
@@ -211,7 +211,7 @@ public class NavigationDrawerFragment extends Fragment {
         // If the drawer is open, show the global app actions in the action bar. See also
         // showGlobalContextActionBar, which controls the top-left area of the action bar.
         if (mDrawerLayout != null && isDrawerOpen()) {
-            inflater.inflate(R.menu.global, menu);
+            inflater.inflate(R.menu.nav_drawer, menu);
             showGlobalContextActionBar();
         }
     }
@@ -221,8 +221,8 @@ public class NavigationDrawerFragment extends Fragment {
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
-        if (item.getItemId() == R.id.action_reset) {
-            mCallbacks.onResetSelected();
+        if (item.getItemId() == R.id.menu_toggle_heating) {
+            mCallbacks.onHeatToggleSelected();
         }
         return success;
     }
@@ -242,8 +242,9 @@ public class NavigationDrawerFragment extends Fragment {
         // when an item is selected
         void onNavigationDrawerItemSelected(int position);
         // if they click the reset button
-        void onResetSelected();
-        // if they select settings
-        // do stuff;
+        void onHeatToggleSelected();
+
+        // is the WiBean heating?
+        boolean isHeating();
     }
 }
