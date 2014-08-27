@@ -21,14 +21,6 @@
         android:layout_gravity="center_horizontal"
         android:text="Chose a time at which your WiBean will automatically power on and begin heating to the desired temperature." />
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="Have My WiBean hot at..."
-        android:textAppearance="?android:attr/textAppearanceMedium" />
-
     <TimePicker
         android:id="@+id/tp_timePicker"
         android:layout_width="wrap_content"
@@ -36,87 +28,18 @@
         android:layout_gravity="center"
         android:clickable="true" />
 
-    <LinearLayout
+    <Spinner
+        android:id="@+id/spn_dstOffset"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_gravity="center_horizontal" />
 
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="with a goal temperature of..."
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-
-        <TextView
-            android:id="@+id/tv_temperatureSeekLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0*C"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-    </LinearLayout>
-
-    <SeekBar
-        android:id="@+id/sb_goalTemp"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/tv_onForLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:layout_gravity="center_horizontal"
-            android:gravity="center_vertical"
-            android:text="Then stay on for..."
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-
-        <EditText
-            android:id="@+id/et_onForMinutes"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:enabled="true"
-            android:gravity="center_vertical"
-            android:hint='"12 minutes"'
-            android:inputType="number"
-            android:maxLength="2"
-            android:maxLines="1"
-            android:maxWidth="10sp"
-            android:text="30" />
-
-        <TextView
-            android:id="@+id/tv_onForMinutesLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:gravity="center_vertical"
-            android:text="minutes"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-    </LinearLayout>
-
-    <Button
-        android:id="@+id/btn_sendTime"
+    <Switch
+        android:id="@+id/sw_toggleAlarm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Set Alarm!" />
-
-    <GridLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="right"></GridLayout>
-
-    <Button
-        android:id="@+id/btn_requestTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Query Device Alarm" />
+        android:layout_gravity="center_horizontal"
+        android:checked="false"
+        android:text="Auto-On" />
 
 </LinearLayout>

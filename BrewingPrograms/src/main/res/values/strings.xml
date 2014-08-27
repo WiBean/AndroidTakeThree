@@ -14,14 +14,17 @@
     <string name="action_discardDeleteProgram">Delete Program!</string>
     <string name="action_saveProgram">Save Changes</string>
     <string name="action_createProgram">Create!</string>
+    <string name="action_connecting_title">Connecting</string>
+    <string name="action_pleaseWait">Please wait...</string>
 
     <string name="action_activatingHeat">Activating Heat...</string>
     <string name="action_disablingHeat">Hibernating...</string>
 
     <string-array name="nav_drawer_items">
-        <item>Settings</item>
         <item>Brew!</item>
         <item>Pre-Heat Alarm</item>
+        <item>Settings</item>
+        <item>Connect Wifi</item>
     </string-array>
     <!-- Nav Drawer List Item Icons -->
     <!-- Keep them in order as the titles are in -->
@@ -48,6 +51,17 @@
     <string name="heading_example_program_name">Example Program Title</string>
     <string name="heading_example_program_description">The greatest example program ever.</string>
 
+
+    <string name="notify_changesSavedSuccess">Changes saved...</string>
+    <string name="notify_changesSavedFailure">Failed to save changes!</string>
+    <string name="notify_wibeanConnectionSuccess">WiBean connected!</string>
+    <string name="notify_brewingFailure_title">Failed to brew</string>
+    <string name="notify_brewingFailure_message">Please check that you are connected and the heat
+    is turned on.</string>
+    <string name="notify_brewSuccess">Enjoy your coffee!</string>
+    <string name="notify_alarmUpdate_title">Updating Alarm Settings</string>
+
+
     <string name="loading_message">Working, please wait...</string>
     <string name="label_ip_address">WiBean IP: </string>
     <string name="hint_ip_address">192.168.1.107</string>
@@ -62,6 +76,27 @@
     <string name="label_accessToken">Access Token</string>
     <string name="label_device_id">Device ID</string>
     <string name="action_testCredentials">Test Credentials</string>
+
+    <!-- Strings for the SmartConfig screen -->
+    <string name="ssid_label">SSID</string>
+    <string name="ssid_hint">WifiNetworkName</string>
+    <string name="password_label">Password</string>
+    <string name="password_hint">theWifiPassword</string>
+    <string name="smartConfig_start_label">Connect!</string>
+    <string name="smartConfig_stop_label">Stop!</string>
+    <string name="key_label">AES Key</string>
+    <string name="smartConfig_default_aes_key">sparkdevices2013</string>
+
+    <string name="alert_noConnectionTitle">Cannot Connect</string>
+    <string name="alert_noConnection_wifiNotConnected">Wifi must be turned on and connected to
+    the network you wish to associate your WiBean with.</string>
+    <string name="alert_connectionTimeout">The attempt to find your WiBean timed out, please
+    check your WiFi settings and the minimum requirements (see instructions) for using a WiBean.
+    </string>
+    <string name="alert_connectionSuccess">Success!  Now setup your WiBean credentials on
+    the Settings tab.</string>
+    <string name="alert_connectionFailure">Connection failed!  An unexpected error was encountered
+    during the connection process.  Please try again.</string>
 
 
 </resources>

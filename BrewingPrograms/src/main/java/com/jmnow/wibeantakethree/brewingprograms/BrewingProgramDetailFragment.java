@@ -2,12 +2,10 @@ package com.jmnow.wibeantakethree.brewingprograms;
 
 import android.app.ActionBar;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.CursorLoader;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
@@ -25,6 +23,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ShareActionProvider;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgram;
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramContentProvider;
@@ -63,6 +62,8 @@ public class BrewingProgramDetailFragment extends Fragment implements
     };
     // Event listener
     BrewingProgramDetailCallbacks mListener;
+    // Do we have unsaved changes?
+    private boolean mUnsavedChanges = false;
     //for the share button
     private ShareActionProvider mShareActionProvider;
     /**
@@ -95,19 +96,17 @@ public class BrewingProgramDetailFragment extends Fragment implements
                              Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View rootView = inflater.inflate(R.layout.fragment_brewingprogram_detail, container, false);
-        if (!mItem.getId().isEmpty()) {
-            ((Button) rootView.findViewById(R.id.btn_deleteProgram)).setEnabled(true);
-        } else {
+        if (mItem.getId().isEmpty()) {
             //we are creating a fresh one
-            ((Button) rootView.findViewById(R.id.btn_saveProgram)).setText(R.string.action_createProgram);
+            ((Button) rootView.findViewById(R.id.btn_programDiscardChanges)).setText(R.string.action_createProgram);
+        } else {
+
         }
         // hookup the button here in the Fragment
         // (onClicks generated from buttons in Fragments get sent to their Activity
         // removing modularity)
         ((Button) rootView.findViewById(R.id.btn_brew)).setOnClickListener(this);
-        ((Button) rootView.findViewById(R.id.btn_saveProgram)).setOnClickListener(this);
         ((Button) rootView.findViewById(R.id.btn_programDiscardChanges)).setOnClickListener(this);
-        ((Button) rootView.findViewById(R.id.btn_deleteProgram)).setOnClickListener(this);
 
         // setup difference checker to enable/disable save button
         ((EditText) rootView.findViewById(R.id.et_program_name)).addTextChangedListener(mDifferenceToggle);
@@ -137,7 +136,15 @@ public class BrewingProgramDetailFragment extends Fragment implements
             mListener.makeBusy("Loading", "Loading program from database...");
             getLoaderManager().initLoader(PROGRAMS_LOADER, null, this);
         } else {
+            // item is blank, init with default values
+            mItem.setName("Untitled Program");
+            mItem.setDescription("Best coffee ever.");
+            Integer onTimes[] = new Integer[]{50, 50, 0, 0, 0};
+            Integer offTimes[] = new Integer[]{20, 0, 0, 0, 0};
+            mItem.setOnTimes(onTimes);
+            mItem.setOffTimes(offTimes);
             updateUiFromItem();
+            ((Button) getView().findViewById(R.id.btn_brew)).setEnabled(true);
         }
     }
 
@@ -184,14 +191,12 @@ public class BrewingProgramDetailFragment extends Fragment implements
     }
 
     private void updateUiOnChange() {
-        boolean different = isItemDifferentThanUi();
-        if (mItem.getId().isEmpty()) {
-            ((Button) getView().findViewById(R.id.btn_saveProgram)).setEnabled(different);
-            ((Button) getView().findViewById(R.id.btn_programDiscardChanges)).setEnabled(false);
-        } else {
-            ((Button) getView().findViewById(R.id.btn_saveProgram)).setEnabled(different);
-            ((Button) getView().findViewById(R.id.btn_programDiscardChanges)).setEnabled(different);
+        mUnsavedChanges = isItemDifferentThanUi();
+        Button b = (Button) getView().findViewById(R.id.btn_programDiscardChanges);
+        if (b != null) {
+            b.setEnabled(mUnsavedChanges);
         }
+
     }
 
     private void updateUiFromItem() {
@@ -369,47 +374,17 @@ public class BrewingProgramDetailFragment extends Fragment implements
     }
 
     private void on_discardChangesClicked(View v) {
+        // discard
         updateUiFromItem();
     }
 
     private void saveOrUpdateRecord(View v) {
-        // move the UI into our object first
-        updateItemFromUi();
         if (mListener.saveOrCreateItem(mItem)) {
-            // on successful create, change the Create button to a save button
-            ((Button) getActivity().findViewById(R.id.btn_saveProgram)).setText(R.string.action_saveProgram);
-        }
-        // enable the delete button
-        if (!mItem.getId().isEmpty()) {
-            ((Button) getView().findViewById(R.id.btn_deleteProgram)).setEnabled(true);
+            Toast.makeText(getActivity(), getString(R.string.notify_changesSavedSuccess), Toast.LENGTH_SHORT);
+        } else {
+            Toast.makeText(getActivity(), getString(R.string.notify_changesSavedFailure), Toast.LENGTH_SHORT);
         }
         updateUiOnChange();
-    }
-
-    private void on_deleteProgram() {
-        new AlertDialog.Builder(getActivity())
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .setTitle("Delete this Program")
-                .setMessage("Are you sure?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        deleteProgram();
-                    }
-
-                })
-                .setNegativeButton("No", null)
-                .show();
-    }
-
-    private void deleteProgram() {
-        if (!mItem.getId().isEmpty()) {
-            getActivity().getContentResolver().delete(
-                    ContentUris.withAppendedId(BrewingProgramContentProvider.CONTENT_URI, Long.parseLong(mItem.getId())),
-                    null, //selector id is contained with the URI
-                    null);
-            getActivity().onBackPressed();
-        }
     }
 
 
@@ -430,16 +405,22 @@ public class BrewingProgramDetailFragment extends Fragment implements
             case R.id.btn_programDiscardChanges:
                 on_discardChangesClicked(v);
                 break;
-            case R.id.btn_saveProgram:
-                try {
-                    AsyncTask<BrewingProgram, Integer, Boolean> task = new ShortenUrlTask().execute(mItem);
-                } catch (Exception e) {
-                    System.out.println("ShortenUrlTask was interrupted: " + e.getLocalizedMessage());
-                }
-                break;
-            case R.id.btn_deleteProgram:
-                on_deleteProgram();
-                break;
+        }
+    }
+
+    public void saveIfNecessary() {
+        if (mUnsavedChanges) {
+            updateItemFromUi();
+            try {
+                AsyncTask<BrewingProgram, Integer, Boolean> task = new ShortenUrlTask().execute(mItem);
+                task.get(); //block on task to keep this alive
+            } catch (Exception e) {
+                System.out.println("ShortenUrlTask was interrupted: " + e.getLocalizedMessage());
+            }
+            // the save commands in the Async task will fail here if called from the activity itself
+            // (as happens when the back button is intercepted and this is called)
+            mListener.saveOrCreateItem(mItem);
+            mListener.makeNotBusy(); // kill the busy spinner
         }
     }
 
@@ -537,10 +518,12 @@ public class BrewingProgramDetailFragment extends Fragment implements
         }
 
         protected void onPostExecute(Boolean result) {
-            // now that we have the item, hook up the share button
             setShareIntent();
-            saveOrUpdateRecord(null);
-            mListener.makeNotBusy();
+            // since we have a new URL, save if we can
+            if (mListener != null) {
+                mListener.saveOrCreateItem(mItem);
+                mListener.makeNotBusy();
+            }
         }
     }
 }

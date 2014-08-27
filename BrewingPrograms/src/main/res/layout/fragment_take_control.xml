@@ -26,6 +26,14 @@
                 android:labelFor="@+id/et_deviceId"
                 android:text="@string/label_device_id" />
 
+            <Button
+                android:id="@+id/btn_scanDeviceId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/et_deviceId"
+                android:layout_toRightOf="@+id/tv_deviceId"
+                android:text="Scan" />
+
             <EditText
                 android:id="@+id/et_deviceId"
                 android:layout_width="match_parent"
@@ -46,6 +54,14 @@
                 android:layout_alignParentLeft="true"
                 android:labelFor="@+id/et_accessToken"
                 android:text="@string/label_accessToken" />
+
+            <Button
+                android:id="@+id/btn_scanAccessToken"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/et_accessToken"
+                android:layout_toRightOf="@+id/tv_accessToken"
+                android:text="Scan" />
 
             <EditText
                 android:id="@+id/et_accessToken"

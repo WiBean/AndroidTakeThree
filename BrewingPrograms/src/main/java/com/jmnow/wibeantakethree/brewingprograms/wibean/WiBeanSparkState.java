@@ -31,9 +31,10 @@ public class WiBeanSparkState {
     private final String SPARK_BASE_URL = "https://api.spark.io/v1/devices/";
     // httpClient, make one to save resources
     private final OkHttpClient mHttpClient = new OkHttpClient();
-    private WiBeanAlarmPack mAlarm = new WiBeanAlarmPack();
+    private WiBeanAlarmPackV1 mAlarm = new WiBeanAlarmPackV1();
 
     private boolean mHeating = false;
+    private boolean mBrewing = false;
     private float mDesiredTemperatureInCelsius = 95;
 
     private float mCurrentHeadTemperatureInCelsius = 0;
@@ -50,6 +51,10 @@ public class WiBeanSparkState {
 
     public boolean isHeating() {
         return mHeating;
+    }
+
+    public boolean isBrewing() {
+        return mBrewing;
     }
 
     public boolean setTemperature(float desiredTemperature) {
@@ -108,6 +113,27 @@ public class WiBeanSparkState {
         return success;
     }
 
+    // take control of the machine, so WiBean is in charge of heating
+    public boolean setAlarm(WiBeanAlarmPackV1 alarm) {
+        StringBuilder targetURL = new StringBuilder();
+        targetURL.append(assembleBaseUrl()).append("toggleAlarm");
+        StringBuilder paramBuilder = new StringBuilder();
+        // it doesn't make sense to specify more than single degrees
+        paramBuilder.append(alarm.getOnTimeAsMinutesAfterMidnight());
+        paramBuilder.append(",").append(alarm.getUtcOffset());
+        RequestBody formBody = new FormEncodingBuilder()
+                .add("access_token", mSparkAccessToken)
+                .add("params", paramBuilder.toString())
+                .build();
+        boolean success = basicSparkFunctionPost(targetURL.toString(), formBody);
+        mAlarm = alarm;
+        return success;
+    }
+
+    public WiBeanAlarmPackV1 getAlarm() {
+        return mAlarm;
+    }
+
     private boolean basicSparkFunctionPost(String targetUrl, RequestBody body) {
         Request.Builder builder = new Request.Builder().url(targetUrl);
         if (body != null) {
@@ -130,7 +156,10 @@ public class WiBeanSparkState {
     }
 
     // queries for the state of the headTemperature sensor
-    public boolean getHeadTemperature(StringBuilder emptyBuilderForTemperatureReturn) {
+    public float getHeadTemperature() {
+        return mCurrentHeadTemperatureInCelsius;
+        // THE OLD WAY
+        /*
         String targetURL = assembleBaseUrl() + "headTemp?" + "access_token=" + mSparkAccessToken;
         Request request = new Request.Builder().url(targetURL).build();
         try {
@@ -158,6 +187,7 @@ public class WiBeanSparkState {
         // if we get here, something went wrong
         emptyBuilderForTemperatureReturn.append("ERR");
         return true;
+        */
     }
 
     // reset control of the WiBean device so the machine acts as if we aren't even there.
@@ -175,12 +205,14 @@ public class WiBeanSparkState {
         for (int k = 0; k < onTimes.length; ++k) {
             paramBuilder.append(onTimes[k]).append(',').append(offTimes[k]).append(',');
         }
+        final String targetUrlAsString = targetURL.toString();
+        final String paramsAsString = paramBuilder.toString();
         RequestBody formBody = new FormEncodingBuilder()
                 .add("access_token", mSparkAccessToken)
-                .add("params", paramBuilder.toString())
+                .add("params", paramsAsString)
                 .build();
         Request request = new Request.Builder()
-                .url(targetURL.toString())
+                .url(targetUrlAsString)
                 .post(formBody)
                 .build();
         try {
@@ -198,6 +230,45 @@ public class WiBeanSparkState {
         return false;
     }
 
+
+    // Query and update status
+    // reset control of the WiBean device so the machine acts as if we aren't even there.
+    public boolean queryStatus() {
+        String targetURL = assembleBaseUrl() + "status?" + "access_token=" + mSparkAccessToken;
+        Request request = new Request.Builder().url(targetURL).build();
+        try {
+            Response response = mHttpClient.newCall(request).execute();
+            final JSONObject bodyAsObject = new JSONObject(response.body().string().trim().replace("\n", ""));
+            if ((response.code() == 200) &&
+                    bodyAsObject.has("result")) {
+                final JSONObject statusAsObject = new JSONObject(bodyAsObject.getString("result"));
+                // object contains the following
+                // ala: alarm active
+                // alt: alarm time as minutes after midnight (values greater than minutes_in_day imply will never fire)
+                // b: boolean is machine currently in pumping cycle?
+                // h: boolean, is machine currently seeking a goal temperature
+                mAlarm.setOnTimeAsMinutesAfterMidnight(statusAsObject.getInt("alt"));
+                mAlarm.setUtcOffset(statusAsObject.getInt("clktz"));
+                mHeating = (statusAsObject.getInt("h") != 0);
+                mBrewing = statusAsObject.getBoolean("b");
+                mCurrentHeadTemperatureInCelsius = (float) statusAsObject.getDouble("t_h");
+                mCurrentAmbientTemperatureInCelsius = (float) statusAsObject.getDouble("t_a");
+                return true;
+            }
+            if ((response.code() == 408)) {
+                return false;
+            }
+            if ((response.code() == 403)) {
+                // signifies bad credentials
+                return false;
+            }
+        } catch (Exception e) {
+            //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
+            System.out.println("queryStatus Failed: " + e.getMessage() + ' ' + e.getClass());
+        }
+        // if we get here, something went wrong
+        return false;
+    }
 
     /**
      * UTILITIES!
@@ -240,15 +311,43 @@ public class WiBeanSparkState {
         return true;
     }
 
-    static public class WiBeanAlarmPack {
-        public int mHeatTempInCelsius;
-        public int mOnTimeAsMinutesAfterMidnight;
-        public int mOnForInMinutes;
+    static public class WiBeanAlarmPackV1 {
+        public static final int MINUTES_IN_DAY = 24 * 60;
 
-        public WiBeanAlarmPack() {
-            mHeatTempInCelsius = 25;
+        private int mOnTimeAsMinutesAfterMidnight;
+        private boolean mAlarmArmed = false;
+        private int mUtcOffset = 0;
+
+        public WiBeanAlarmPackV1() {
             mOnTimeAsMinutesAfterMidnight = 480;
-            mOnForInMinutes = 10;
+        }
+
+        public int getOnTimeAsMinutesAfterMidnight() {
+            return mOnTimeAsMinutesAfterMidnight;
+        }
+
+        public void setOnTimeAsMinutesAfterMidnight(int mOnTimeAsMinutesAfterMidnight) {
+            this.mOnTimeAsMinutesAfterMidnight = mOnTimeAsMinutesAfterMidnight;
+            mAlarmArmed = (this.mOnTimeAsMinutesAfterMidnight < MINUTES_IN_DAY);
+        }
+
+        public boolean setUtcOffset(int utcOffset) {
+            if (Math.abs(utcOffset) > 12) {
+                return false;
+            } else {
+                mUtcOffset = utcOffset;
+                return true;
+            }
+        }
+
+        ;
+
+        public int getUtcOffset() {
+            return mUtcOffset;
+        }
+
+        public boolean getAlarmArmed() {
+            return mAlarmArmed;
         }
     }
 }

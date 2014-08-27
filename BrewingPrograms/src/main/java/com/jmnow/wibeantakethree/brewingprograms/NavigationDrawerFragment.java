@@ -89,9 +89,10 @@ public class NavigationDrawerFragment extends Fragment {
         // load nav drawer menu titles and icons
         String[] navMenuTitles = getResources().getStringArray(R.array.nav_drawer_items);
         TypedArray navMenuIcons = getResources().obtainTypedArray(R.array.nav_drawer_icons);
-        navDrawerItems.add(new NavDrawerItem(navMenuTitles[0], navMenuIcons.getResourceId(0, -1), false, ""));
-        navDrawerItems.add(new NavDrawerItem(navMenuTitles[1], navMenuIcons.getResourceId(1, -1), false, ""));
-        navDrawerItems.add(new NavDrawerItem(navMenuTitles[2], navMenuIcons.getResourceId(2, -1), false, ""));
+        navDrawerItems.add(new NavDrawerItem(navMenuTitles[0], navMenuIcons.getResourceId(1, -1), false, ""));
+        navDrawerItems.add(new NavDrawerItem(navMenuTitles[1], navMenuIcons.getResourceId(2, -1), false, ""));
+        navDrawerItems.add(new NavDrawerItem(navMenuTitles[2], navMenuIcons.getResourceId(0, -1), false, ""));
+        navDrawerItems.add(new NavDrawerItem(navMenuTitles[3], navMenuIcons.getResourceId(0, -1), false, ""));
         mDrawerListView.setAdapter(new NavDrawerArrayAdapter(
                 getActionBar().getThemedContext(),
                 R.layout.nav_drawer_list_item,
@@ -100,11 +101,13 @@ public class NavigationDrawerFragment extends Fragment {
         mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
         return mDrawerListView;
     }
+
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         //selectItem(mCurrentSelectedPosition);
     }
+
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -114,6 +117,7 @@ public class NavigationDrawerFragment extends Fragment {
             throw new ClassCastException("Activity must implement NavigationDrawerCallbacks.");
         }
     }
+
     @Override
     public void onDetach() {
         super.onDetach();
@@ -167,6 +171,7 @@ public class NavigationDrawerFragment extends Fragment {
 
                 getActivity().invalidateOptionsMenu(); // calls onPrepareOptionsMenu()
             }
+
             @Override
             public void onDrawerOpened(View drawerView) {
                 super.onDrawerOpened(drawerView);
@@ -199,12 +204,14 @@ public class NavigationDrawerFragment extends Fragment {
 
         mDrawerLayout.setDrawerListener(mDrawerToggle);
     }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         // Forward the new configuration the drawer toggle component.
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
@@ -215,6 +222,7 @@ public class NavigationDrawerFragment extends Fragment {
             showGlobalContextActionBar();
         }
     }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         boolean success = super.onOptionsItemSelected(item);
@@ -241,6 +249,7 @@ public class NavigationDrawerFragment extends Fragment {
     public static interface NavigationDrawerCallbacks {
         // when an item is selected
         void onNavigationDrawerItemSelected(int position);
+
         // if they click the reset button
         void onHeatToggleSelected();
 

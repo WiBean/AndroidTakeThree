@@ -37,6 +37,9 @@ public class BrewingProgram {
     private String mModifiedAt = "";
     private String mShortUrl = "";
 
+    // CALCULATED FIELDS
+    private long mTotalDurationInMilliseconds = 0;
+
     public BrewingProgram(CharSequence id, CharSequence name) {
         this.mId = id.toString();
         this.mName = name.toString();
@@ -53,6 +56,7 @@ public class BrewingProgram {
         this.mDescription = description.toString();
         this.onTimes = onTimes;
         this.offTimes = offTimes;
+        calculateFields();
     }
 
     public static BrewingProgram fromUri(Uri androidUri) {
@@ -63,6 +67,7 @@ public class BrewingProgram {
                 newGuy.parseNameValuePair(params.get(k));
                 System.out.println("key: " + params.get(k).getName() + " value: " + params.get(k).getValue());
             }
+            newGuy.calculateFields();
         } catch (Exception e) {
             // crap
         }
@@ -136,6 +141,7 @@ public class BrewingProgram {
             onTimes[k] = 0;
         }
         this.onTimes = onTimes;
+        calculateFields();
         return true;
     }
 
@@ -155,6 +161,7 @@ public class BrewingProgram {
             offTimes[k] = 0;
         }
         this.offTimes = offTimes;
+        calculateFields();
         return true;
     }
 
@@ -190,6 +197,10 @@ public class BrewingProgram {
             System.out.println("getShortUrl Failed: " + e.getMessage() + ' ' + e.getClass());
         }
         return false;
+    }
+
+    public long getTotalDurationInMilliseconds() {
+        return mTotalDurationInMilliseconds;
     }
 
     @Override
@@ -266,5 +277,16 @@ public class BrewingProgram {
                 }
         }
 
+    }
+
+    private void calculateFields() {
+        long totalTimeInMilliseconds = 0;
+        for (int time : onTimes) {
+            totalTimeInMilliseconds += time;
+        }
+        for (int time : offTimes) {
+            totalTimeInMilliseconds += time;
+        }
+        mTotalDurationInMilliseconds = totalTimeInMilliseconds * 100; // each tick is 100ms
     }
 }

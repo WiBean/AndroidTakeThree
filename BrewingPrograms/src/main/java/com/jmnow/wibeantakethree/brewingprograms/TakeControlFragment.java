@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.google.zxing.integration.android.IntentIntegrator;
 import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanSparkState;
 
 
@@ -71,8 +72,9 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         // hookup the button here in the Fragment
         // (onClicks generated from buttons in Fragments get sent to their Activity
         // removing modularity)
-        Button b = (Button) v.findViewById(R.id.btn_testCredentials);
-        b.setOnClickListener(this);
+        ((Button) v.findViewById(R.id.btn_testCredentials)).setOnClickListener(this);
+        ((Button) v.findViewById(R.id.btn_scanDeviceId)).setOnClickListener(this);
+        ((Button) v.findViewById(R.id.btn_scanAccessToken)).setOnClickListener(this);
         return v;
     }
 
@@ -150,6 +152,12 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
             case R.id.btn_testCredentials:
                 btn_testCredentials_onClick(v);
                 break;
+            case R.id.btn_scanAccessToken:
+                onClick_pullAccessTokenFromBarcode(v);
+                break;
+            case R.id.btn_scanDeviceId:
+                onClick_pullDeviceIdFromBarcode(v);
+                break;
         }
     }
 
@@ -162,6 +170,18 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         mCredentialsValid = false;
     }
 
+
+    public void onClick_pullAccessTokenFromBarcode(View v) {
+        mListener.setTargetControl(R.id.et_accessToken);
+        IntentIntegrator integrator = new IntentIntegrator(getActivity());
+        integrator.initiateScan();
+    }
+
+    public void onClick_pullDeviceIdFromBarcode(View v) {
+        mListener.setTargetControl(R.id.et_deviceId);
+        IntentIntegrator integrator = new IntentIntegrator(getActivity());
+        integrator.initiateScan();
+    }
 
     public void btn_testCredentials_onClick(View v) {
         //toggle
@@ -184,7 +204,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         prefsEdit.putString(WiBeanSparkState.PREF_KEY_BREW_TEMP, currentTemp);
         prefsEdit.commit();
         try {
-            mListener.testCredentials();
+            mListener.temperaturePollLoop();
         } catch (Exception e) {
             //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
             System.out.println("TakeControl Failed: " + e.getMessage() + ' ' + e.getClass());
@@ -219,7 +239,9 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     public interface TakeControlFragmentListener {
         public void alertUser(String title, String message);
 
-        public void testCredentials();
+        public void temperaturePollLoop();
+
+        public void setTargetControl(int viewId);
     }
 
 }

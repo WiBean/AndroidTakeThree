@@ -283,16 +283,6 @@
             android:textAppearance="?android:attr/textAppearanceLarge" />
 
         <Button
-            android:id="@+id/btn_saveProgram"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:layout_margin="5dp"
-            android:enabled="false"
-            android:text="@string/action_saveProgram"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-
-        <Button
             android:id="@+id/btn_programDiscardChanges"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -301,14 +291,5 @@
             android:enabled="false"
             android:text="@string/action_discardProgramChanges"
             android:textAppearance="?android:attr/textAppearanceMedium" />
-
-        <Button
-            android:id="@+id/btn_deleteProgram"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:layout_margin="5dp"
-            android:enabled="false"
-            android:text="@string/action_discardDeleteProgram" />
     </LinearLayout>
 </ScrollView>
