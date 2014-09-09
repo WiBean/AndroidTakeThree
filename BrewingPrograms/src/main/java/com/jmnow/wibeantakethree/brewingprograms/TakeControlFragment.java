@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanSparkState;
@@ -32,6 +33,13 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
     private boolean mCredentialsValid = false;
 
     private TakeControlFragmentListener mListener;
+
+    private Button mConnectButton;
+    private Button mScanDeviceId;
+    private Button mScanAccessToken;
+    private EditText mDeviceId_editText;
+    private EditText mAccessToken_editText;
+    private EditText mGoalTemperature_editText;
 
     public TakeControlFragment() {
         // Required empty public constructor
@@ -69,12 +77,21 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_take_control, container, false);
 
+        // hookup convenience members
+        mConnectButton = (Button) v.findViewById(R.id.btn_testCredentials);
+        mScanDeviceId = (Button) v.findViewById(R.id.btn_scanDeviceId);
+        mScanAccessToken = (Button) v.findViewById(R.id.btn_scanAccessToken);
+        mDeviceId_editText = (EditText) v.findViewById(R.id.et_deviceId);
+        mAccessToken_editText = (EditText) v.findViewById(R.id.et_accessToken);
+        ;
+        mGoalTemperature_editText = (EditText) v.findViewById(R.id.et_goalTemperature);
+        ;
         // hookup the button here in the Fragment
         // (onClicks generated from buttons in Fragments get sent to their Activity
         // removing modularity)
-        ((Button) v.findViewById(R.id.btn_testCredentials)).setOnClickListener(this);
-        ((Button) v.findViewById(R.id.btn_scanDeviceId)).setOnClickListener(this);
-        ((Button) v.findViewById(R.id.btn_scanAccessToken)).setOnClickListener(this);
+        mConnectButton.setOnClickListener(this);
+        mScanDeviceId.setOnClickListener(this);
+        mScanAccessToken.setOnClickListener(this);
         return v;
     }
 
@@ -116,7 +133,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
             needCredential = true;
         }
         if (needCredential) {
-            mListener.alertUser("Need setting", getString(R.string.dialog_ip_error_message));
+            mListener.alertUser("Need setting", getString(R.string.alert_ip_error_message));
         }
         if (testCredentials) {
             if (!mCredentialsValid) {
@@ -161,15 +178,34 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         }
     }
 
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        try {
+            mListener = (TakeControlFragmentListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString()
+                    + " must implement TakeControlFragmentListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mListener = null;
+    }
 
     public void setCredentialsValid() {
+        // assume whoever called this was finished with any network/pending operations
+        enableInputs();
         mCredentialsValid = true;
     }
 
     public void setCredentialsInvalid() {
+        // assume whoever called this was finished with any network/pending operations
+        enableInputs();
         mCredentialsValid = false;
     }
-
 
     public void onClick_pullAccessTokenFromBarcode(View v) {
         mListener.setTargetControl(R.id.et_accessToken);
@@ -185,6 +221,8 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
 
     public void btn_testCredentials_onClick(View v) {
         //toggle
+        //disable buttons
+        disableInputs();
         // use the current values to update the database
         EditText etDeviceId = (EditText) getView().findViewById(R.id.et_deviceId);
         String deviceId = etDeviceId.getText().toString();
@@ -193,7 +231,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
 
         String currentTemp = ((EditText) getView().findViewById(R.id.et_goalTemperature)).getText().toString();
         if (deviceId.isEmpty() || accessToken.isEmpty()) {
-            mListener.alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+            mListener.alertUser(getString(R.string.alert_ip_error_title), getString(R.string.alert_ip_error_message));
             mCredentialsValid = false;
             return;
         }
@@ -203,6 +241,7 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         prefsEdit.putString(WiBeanSparkState.PREF_KEY_ACCESS_TOKEN, accessToken);
         prefsEdit.putString(WiBeanSparkState.PREF_KEY_BREW_TEMP, currentTemp);
         prefsEdit.commit();
+        Toast.makeText(getActivity(), R.string.action_testCredentials_toast, Toast.LENGTH_SHORT);
         try {
             mListener.temperaturePollLoop();
         } catch (Exception e) {
@@ -212,22 +251,22 @@ public class TakeControlFragment extends Fragment implements View.OnClickListene
         }
     }
 
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        try {
-            mListener = (TakeControlFragmentListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement TakeControlFragmentListener");
-        }
-        ((BrewingProgramListActivity) activity).onSectionAttached(0);
+    private void enableInputs() {
+        mConnectButton.setEnabled(true);
+        mAccessToken_editText.setEnabled(true);
+        mScanAccessToken.setEnabled(true);
+        mScanDeviceId.setEnabled(true);
+        mDeviceId_editText.setEnabled(true);
+        mGoalTemperature_editText.setEnabled(true);
     }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
+    private void disableInputs() {
+        mConnectButton.setEnabled(false);
+        mAccessToken_editText.setEnabled(false);
+        mScanAccessToken.setEnabled(false);
+        mScanDeviceId.setEnabled(false);
+        mDeviceId_editText.setEnabled(false);
+        mGoalTemperature_editText.setEnabled(false);
     }
 
     /**

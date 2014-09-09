@@ -5,10 +5,14 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.app.TaskStackBuilder;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -16,13 +20,17 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.IdRes;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.analytics.GoogleAnalytics;
+import com.google.android.gms.analytics.Tracker;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgram;
@@ -31,9 +39,12 @@ import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramHelper;
 import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanSparkState;
 import com.squareup.okhttp.OkHttpClient;
 
+import org.apache.http.HttpStatus;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -68,8 +79,24 @@ public class BrewingProgramListActivity extends Activity
     private static final String TAG_ALARM = "fragment_alarm";
     private static final String TAG_BREWINGPROGRAMDETAIL = "fragment_brewingProgramDetail";
     private static final String TAG_SMARTCONFIG = "fragment_smartConfig";
+    /**
+     * NOTIFICATION IDENTIFIERS
+     */
+    private static final int NOTIFICATION_HOT = 100;
+    private static final String PROPERTY_ID = "UA-42606656-1";
+    // and a related listener to use when we can to cancel a brew in progress
+    final DialogInterface.OnCancelListener sBrewCanceler = new DialogInterface.OnCancelListener() {
+        @Override
+        public void onCancel(DialogInterface dialog) {
+            // first, cancel the old program
+            mBrewingTask.cancel(true);
+        }
+    };
     // httpClient, make one to save resources
     OkHttpClient mHttpClient;
+    // used so we can cancel a brew in progress
+    AsyncTask<BrewingProgram, Integer, Integer> mBrewingTask;
+    HashMap<TrackerName, Tracker> mTrackers = new HashMap<TrackerName, Tracker>();
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
@@ -81,8 +108,12 @@ public class BrewingProgramListActivity extends Activity
     private boolean mTwoPane;
     // Handler allows us to run actions on the GUI thread, and post delayed events
     private Handler mHandler = new Handler();
-    // used to store pointer to a progress dialog
-    private ProgressDialog mProgress;
+    // two progress dialogs used by the fragments
+    private ProgressDialog mIndefiniteProgress;
+    private ProgressBar mIndefiniteProgressLow;
+    private ProgressDialog mDefiniteProgress;
+    // keep track of our status label  (assigned in onViewCreated)
+    private TextView mStatusBarStateText;
     // handles the state and communication with the WiBean
     private WiBeanSparkState mWibean = new WiBeanSparkState();
     // this variable is used to allow fragments to point at a control which we will fill when
@@ -96,8 +127,24 @@ public class BrewingProgramListActivity extends Activity
     private Context mContext;
     // mutex for keeping track of temperature HTTP calls
     private Semaphore mTempLoopMutex = new Semaphore(1);
-    // keep track of connection attempts so we don't try forever
-    private boolean tryConnectionOnFailure = true;
+    // used to trigger notifications for heating
+    private boolean mNotifyWhenHot = false;
+    private float mGoalTemperature = 92;
+    // keep track of foreground/background state and stop the polling loop
+    private boolean mPausePolling = false;
+
+    synchronized Tracker getTracker(TrackerName trackerId) {
+        if (!mTrackers.containsKey(trackerId)) {
+            GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
+            Tracker t = (trackerId == TrackerName.APP_TRACKER) ? analytics.newTracker(PROPERTY_ID)
+                    : analytics.newTracker(R.xml.global_tracker);
+            mTrackers.put(trackerId, t);
+
+        }
+        return mTrackers.get(trackerId);
+    }
+    // END GOOGLE ANALYTICS TRACKING METHODS AND RESOURCES
+
     //*******************
     //* LIFECYCLE METHODS
     //******************
@@ -105,7 +152,17 @@ public class BrewingProgramListActivity extends Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mContext = this;
+        // Google Analytics override
+        if (!BuildConfig.REPORT_ANALYTICS) {
+            // When dry run is set, hits will not be dispatched, but will still be logged as
+            // though they were dispatched.
+            GoogleAnalytics.getInstance(this).setDryRun(true);
+        }
+
         setContentView(R.layout.activity_brewingprogram_list);
+        // hook up convenience members
+        mStatusBarStateText = (TextView) findViewById(R.id.tv_inControlLabel);
+        mIndefiniteProgressLow = (ProgressBar) findViewById(R.id.pb_indeterminateLow);
 
         if (findViewById(R.id.brewingprogram_detail_container) != null) {
             // The detail container view will be present only in the
@@ -126,66 +183,12 @@ public class BrewingProgramListActivity extends Activity
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
-
         mHttpClient = new OkHttpClient();
-
-        // TODO: If exposing deep links into your app, handle intents here.
+        // Intent parsing goes here for deep links
         Intent intent = getIntent();
         if (!parseIntent(intent)) {
             mNavigationDrawerFragment.selectItem(2);
         }
-    }
-
-    // returns true if action taken
-    private boolean parseIntent(Intent intent) {
-        String action = intent.getAction();
-        Uri data = intent.getData();
-        if (action.equals("android.intent.action.VIEW")) {
-            // parse appropriately different versions
-            if (data.getScheme().equalsIgnoreCase("http")) {
-                if (data.getHost().equalsIgnoreCase("www.wibean.com")) {
-                    if (data.getPath().startsWith("/brewingProgram/v1")) {
-                        // parse the program.
-                        System.out.println(data.getQuery());
-                        BrewingProgram newProg = BrewingProgram.fromUri(data);
-                        if (insertOrUpdateBrewingProgram(newProg)) {
-                            // navigate to the program list so the backstack works
-                            mNavigationDrawerFragment.selectItem(0);
-                            // load the item
-                            onItemSelected(newProg.getId());
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    public void onSectionAttached(int number) {
-        /**
-         * Don't handle this here for now
-         */
-        /*
-        switch (number) {
-            case 0:
-                mTitle = getString(R.string.title_takeControl);
-                break;
-            case 1:
-                mTitle = getString(R.string.title_brewingprogram_list);
-                mTitle = getString(R.string.title_brewingprogram_list);
-                break;
-            case 2:
-                mTitle = getString(R.string.title_wakeAlarm);
-                break;
-        }
-        */
-    }
-
-    public void restoreActionBar() {
-        ActionBar actionBar = getActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-        actionBar.setDisplayShowTitleEnabled(true);
     }
 
     @Override
@@ -243,16 +246,67 @@ public class BrewingProgramListActivity extends Activity
         mRequestedViewId = -1;
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        mPausePolling = true;
+    }
+
+    @Override
+    public void onResume() {
+        super.onPause();
+        mPausePolling = false;
+        temperaturePollLoop();
+    }
+
+    // returns true if action taken
+    private boolean parseIntent(Intent intent) {
+        String action = intent.getAction();
+        Uri data = intent.getData();
+        if ((action == null) || (action.isEmpty())) {
+            return false;
+        } else if (data == null) {
+            return false;
+        } else if (action.equals("android.intent.action.VIEW")) {
+            // parse appropriately different versions
+            if (data.getScheme().equalsIgnoreCase("http")) {
+                if (data.getHost().equalsIgnoreCase("www.wibean.com")) {
+                    if (data.getPath().startsWith("/brewingProgram/v1")) {
+                        // parse the program.
+                        System.out.println(data.getQuery());
+                        BrewingProgram newProg = BrewingProgram.fromUri(data);
+                        if (insertOrUpdateBrewingProgram(newProg)) {
+                            // navigate to the program list so the backstack works
+                            mNavigationDrawerFragment.selectItem(0);
+                            // load the item
+                            onItemSelected(newProg.getId());
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public void restoreActionBar() {
+        ActionBar actionBar = getActionBar();
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+        actionBar.setDisplayShowTitleEnabled(true);
+    }
+
     public boolean refreshPrefs() {
         SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
         String deviceId = prefs.getString(WiBeanSparkState.PREF_KEY_DEVICE_ID, "");
         String accessToken = prefs.getString(WiBeanSparkState.PREF_KEY_ACCESS_TOKEN, "");
+        mGoalTemperature = Float.valueOf(prefs.getString(WiBeanSparkState.PREF_KEY_BREW_TEMP, "92"));
         if (deviceId.isEmpty() || accessToken.isEmpty()) {
             return false;
         }
         boolean success = true;
         success &= mWibean.setSparkDeviceId(deviceId);
         success &= mWibean.setSparkAccessToken(accessToken);
+
         return success;
     }
 
@@ -298,6 +352,8 @@ public class BrewingProgramListActivity extends Activity
         } else {
             try {
                 AsyncTask<Integer, Integer, Boolean> task = new MakeHeatTask().execute();
+                // since they are turning on the heat, notify the user
+                mNotifyWhenHot = true;
             } catch (Exception e) {
                 System.out.println("MakeHeat was interrupted: " + e.getLocalizedMessage());
             }
@@ -305,68 +361,65 @@ public class BrewingProgramListActivity extends Activity
     }
 
     /**
+     * Runs the indefinite progress bar along the bottom with no text
+     */
+    public void makeBusy() {
+        mIndefiniteProgressLow.setVisibility(mIndefiniteProgressLow.VISIBLE);
+    }
+
+    /**
      * Allows user to use the progress bar for the whole activity.
      * Designed to be called in the GUI thread, most likely via an AsyncTask pre/post trigger
      */
     public void makeBusy(final CharSequence title, final CharSequence message) {
-        mProgress = new ProgressDialog(BrewingProgramListActivity.this);
-        mProgress.setProgressStyle(mProgress.STYLE_SPINNER);
-        mProgress.setTitle(title);
-        mProgress.setMessage(message);
-        mProgress.setIndeterminate(true);
-        mProgress.setCancelable(false);
-        mProgress.show();
+        if (mIndefiniteProgress == null) {
+            mIndefiniteProgress = new ProgressDialog(BrewingProgramListActivity.this);
+        }
+        mIndefiniteProgress.setProgressStyle(mIndefiniteProgress.STYLE_SPINNER);
+        mIndefiniteProgress.setTitle(title);
+        mIndefiniteProgress.setMessage(message);
+        mIndefiniteProgress.setIndeterminate(true);
+        mIndefiniteProgress.setCancelable(false);
+        mIndefiniteProgress.show();
     }
 
     public void makeBusyWithProgress(final CharSequence title, final CharSequence message) {
-        mProgress = new ProgressDialog(BrewingProgramListActivity.this, ProgressDialog.STYLE_HORIZONTAL);
-        mProgress.setProgressStyle(mProgress.STYLE_HORIZONTAL);
-        mProgress.setTitle(title);
-        mProgress.setMessage(message);
-        mProgress.setProgress(0);
-        mProgress.setMax(100);
-        mProgress.setCancelable(false);
-        mProgress.show();
+        if (mDefiniteProgress == null) {
+            mDefiniteProgress = new ProgressDialog(BrewingProgramListActivity.this, ProgressDialog.STYLE_HORIZONTAL);
+        }
+        mDefiniteProgress.setProgressStyle(mDefiniteProgress.STYLE_HORIZONTAL);
+        mDefiniteProgress.setTitle(title);
+        mDefiniteProgress.setMessage(message);
+        mDefiniteProgress.setProgress(0);
+        mDefiniteProgress.setMax(100);
+        mDefiniteProgress.setCancelable(true);
+        mDefiniteProgress.setOnCancelListener(sBrewCanceler);
+        mDefiniteProgress.show();
     }
 
     public void updateBusyProgress(int value) {
-        if (mProgress != null) {
-            mProgress.setProgress(value);
+        if (mDefiniteProgress != null) {
+            mDefiniteProgress.setProgress(value);
         }
     }
 
     public void makeNotBusy() {
-        if (mProgress != null) {
-            mProgress.dismiss();
+        if (mIndefiniteProgress != null) {
+            mIndefiniteProgress.dismiss();
         }
+        if (mDefiniteProgress != null) {
+            mDefiniteProgress.setProgress(0);
+            mDefiniteProgress.dismiss();
+        }
+        mIndefiniteProgressLow.setVisibility(mIndefiniteProgressLow.GONE);
     }
 
     public void temperaturePollLoop() {
         // only allow one poll at a time
-        if (mTempLoopMutex.tryAcquire()) {
-            // transitioning from unconnected > connected, notify user
-            if (!mCredentialsValid && tryConnectionOnFailure) {
-                makeBusy(getString(R.string.action_connecting_title), getString(R.string.action_pleaseWait));
-            }
+        if (!mPausePolling && mTempLoopMutex.tryAcquire()) {
             // make the request
-            AsyncTask<Void, Integer, Boolean> task = new QueryStatusTask().execute();
+            AsyncTask<Void, Integer, Integer> task = new QueryStatusTask().execute();
         }
-        // query every 4 seconds when cold
-        int queryInterval = 4000;
-        // 2 seconds when heating
-        if (mWibean.isHeating()) {
-            queryInterval = 2000;
-        }
-        // and 1 second when  brewing
-        if (mWibean.isBrewing()) {
-            queryInterval = 1000;
-        }
-        mHandler.postDelayed(new Runnable() {
-                                 @Override
-                                 public void run() {
-                                     temperaturePollLoop();
-                                 }
-        }, queryInterval);
     }
 
     public boolean insertOrUpdateBrewingProgram(BrewingProgram theProgram) {
@@ -475,6 +528,37 @@ public class BrewingProgramListActivity extends Activity
         toggleHeating();
     }
 
+    /**
+     * When the brewing temperature is reached and the user has requested a notification, deliver
+     * them here
+     */
+    public void deliverHotNotifications() {
+        // if shared pref
+        NotificationCompat.Builder nb = new NotificationCompat.Builder(this);
+        nb.setContentTitle(getString(R.string.notify_goalTemperatureAchieved));
+        nb.setContentText(getString(R.string.notify_goalTemperatureAchieved_prefix)
+                + String.valueOf(mWibean.getHeadTemperature())
+                + getString(R.string.notify_goalTemperatureAchieved_suffix));
+        nb.setSmallIcon(R.drawable.ic_whats_hot);
+        // The stack builder object will contain an artificial back stack for the started Activity.
+        // This ensures that navigating backward from the Activity leads out of your application to the Home screen.
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        // Adds the back stack for the Intent (but not the Intent itself)
+        stackBuilder.addParentStack(BrewingProgramListActivity.class);
+        // Adds the Intent that starts the Activity to the top of the stack
+        // Creates an explicit intent for an Activity in your app
+        Intent resultIntent = new Intent(this, BrewingProgramListActivity.class);
+        stackBuilder.addNextIntent(resultIntent);
+        PendingIntent resultPendingIntent =
+                stackBuilder.getPendingIntent(
+                        0,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                );
+        nb.setContentIntent(resultPendingIntent);
+        nb.setAutoCancel(true);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(NOTIFICATION_HOT, nb.build());
+    }
 
     /**
      * INTERFACE FOR BrewingProgramListFragment
@@ -516,7 +600,7 @@ public class BrewingProgramListActivity extends Activity
 
         Boolean success = false;
         try {
-            AsyncTask<BrewingProgram, Integer, Boolean> task = new BrewProgramTask().execute(theProgram);
+            mBrewingTask = new BrewProgramTask().execute(theProgram);
         } catch (Exception e) {
             System.out.println("brewProgram was interrupted: " + e.getLocalizedMessage());
             success = false;
@@ -525,6 +609,19 @@ public class BrewingProgramListActivity extends Activity
 
     public boolean saveOrCreateItem(BrewingProgram aProgram) {
         return insertOrUpdateBrewingProgram(aProgram);
+    }
+
+    /**
+     * Google Analytics Tracking
+     * Enum used to identify the tracker that needs to be used for tracking.
+     *
+     * A single tracker is usually enough for most purposes. In case you do need multiple trackers,
+     * storing them all in Application object helps ensure that they are created only once per
+     * application instance.
+     */
+    public enum TrackerName {
+        APP_TRACKER, // Tracker used only in this app.
+        GLOBAL_TRACKER, // Tracker used by all the apps from a company. eg: roll-up tracking.
     }
 
     /**
@@ -545,11 +642,11 @@ public class BrewingProgramListActivity extends Activity
         }
         protected void onPostExecute(Boolean result) {
             if (!result) {
-                alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+                alertUser(getString(R.string.alert_ip_error_title), getString(R.string.alert_ip_error_message));
             } else {
                 // heat toggle text update is already handled by NavDrawerFragment, don't do it here
                 // update status text
-                ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_control_status_heating);
+                mStatusBarStateText.setText(R.string.heading_control_status_heating);
             }
             // force a rebuild of the button text
             invalidateOptionsMenu();
@@ -570,13 +667,14 @@ public class BrewingProgramListActivity extends Activity
             makeBusy("Please wait", getString(R.string.action_disablingHeat));
             refreshPrefs();
         }
+
         protected void onPostExecute(Boolean result) {
             if (!result) {
-                alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+                alertUser(getString(R.string.alert_ip_error_title), getString(R.string.alert_ip_error_message));
             } else {
                 // heat toggle text update is already handled by NavDrawerFragment, don't do it here
                 // update status text
-                ((TextView) (findViewById(R.id.tv_inControlLabel))).setText(R.string.heading_control_status_cooling);
+                mStatusBarStateText.setText(R.string.heading_control_status_cooling);
             }
             // force a rebuild of the button text
             invalidateOptionsMenu();
@@ -584,15 +682,18 @@ public class BrewingProgramListActivity extends Activity
         }
     }
 
-    private class BrewProgramTask extends AsyncTask<BrewingProgram, Integer, Boolean> {
+    private class BrewProgramTask extends AsyncTask<BrewingProgram, Integer, Integer> {
         protected void onPreExecute() {
             makeBusyWithProgress("Brewing!", "Generating coffee...");
+            //set the status label
+            mStatusBarStateText.setText(R.string.heading_control_status_brewing);
             refreshPrefs();
         }
-        protected Boolean doInBackground(BrewingProgram... programs) {
-            boolean success = true;
+
+        protected Integer doInBackground(BrewingProgram... programs) {
+            int lastRet = -1;
             for (int k = 0; k < programs.length; ++k) {
-                success &= mWibean.runBrewProgram(programs[k]);
+                lastRet = mWibean.runBrewProgram(programs[k]);
                 // now spin a progress bar for the length of the program
                 // spin at ~10fps
                 final int sleepTimeInMs = 1000 / 10;
@@ -601,55 +702,91 @@ public class BrewingProgramListActivity extends Activity
                 final long startTime = c.getTimeInMillis();
                 final long endTime = startTime + totalDuration;
                 // only spin if the brew actually started well
-                while (success && (c.getTimeInMillis() < endTime)) {
+                while ((lastRet == 1) && (c.getTimeInMillis() < endTime)) {
+                    if (isCancelled()) {
+                        // dispatch a cancel request
+                        BrewingProgram p = new BrewingProgram("0", "empty");
+                        final Integer[] arr = new Integer[]{0, 0, 0, 0, 0};
+                        p.setOnTimes(arr);
+                        p.setOffTimes(arr);
+                        publishProgress(100);
+                        return mWibean.runBrewProgram(p);
+                    }
                     try {
                         Thread.sleep(sleepTimeInMs);
                     } catch (Exception e) {
                     }
                     ;
-                    publishProgress((int) ((c.getTimeInMillis() - startTime) * 100 / totalDuration));
                     // update the calendar object with the new time
                     c = Calendar.getInstance();
+                    publishProgress((int) ((c.getTimeInMillis() - startTime) * 100 / totalDuration));
                 }
                 publishProgress(100);
             }
-            return success;
+            return lastRet;
         }
-
         protected void onProgressUpdate(Integer... progress) {
             updateBusyProgress(progress[0]);
         }
 
-        protected void onPostExecute(Boolean result) {
-            if (!result) {
-                alertUser(getString(R.string.notify_brewingFailure_title), getString(R.string.notify_brewingFailure_message));
-            } else {
-                Toast.makeText(BrewingProgramListActivity.this, mContext.getString(R.string.notify_brewSuccess), Toast.LENGTH_LONG).show();
+        protected void onPostExecute(Integer result) {
+            resultSwitch(result);
+        }
+
+        protected void onCancelled(Integer result) {
+            resultSwitch(result);
+        }
+
+        // ONLY CALL THIS FROM A UI-THREAD
+        private void resultSwitch(Integer result) {
+            switch (result) {
+                case WiBeanSparkState.RETURN_CODE_PUMP_SUCCESS:
+                    Toast.makeText(BrewingProgramListActivity.this, mContext.getString(R.string.notify_brewSuccess), Toast.LENGTH_LONG).show();
+                    break;
+                case WiBeanSparkState.RETURN_CODE_PUMP_INVALID_PROGRAM:
+                    alertUser(getString(R.string.notify_brewingFailure_title), getString(R.string.notify_brewingFailure_message_error));
+                    break;
+                case WiBeanSparkState.RETURN_CODE_PUMP_BUSY:
+                    alertUser(getString(R.string.notify_brewingFailure_title), getString(R.string.notify_brewingFailure_message_busy));
+                    break;
+                case WiBeanSparkState.RETURN_CODE_PUMP_CANCELLED:
+                    Toast.makeText(BrewingProgramListActivity.this, mContext.getString(R.string.notify_brewCancelled), Toast.LENGTH_LONG).show();
+                    break;
             }
+            // TODO: pre-emptive strike the status text, have a method which properly the status text no matter what
             makeNotBusy();
         }
     }
 
-    private class QueryStatusTask extends AsyncTask<Void, Integer, Boolean> {
+    private class QueryStatusTask extends AsyncTask<Void, Integer, Integer> {
         protected void onPreExecute() {
             refreshPrefs();
+            if (!mCredentialsValid) {
+                makeBusy();
+                mStatusBarStateText.setText(R.string.heading_control_status_connecting);
+            }
         }
 
-        protected Boolean doInBackground(Void... voids) {
+        protected Integer doInBackground(Void... voids) {
             return mWibean.queryStatus();
         }
 
-        protected void onPostExecute(Boolean result) {
+        protected void onPostExecute(Integer result) {
             try {
-                if (!result) {
+                boolean tryAgain = true;
+                if (result.equals(Integer.valueOf((HttpStatus.SC_FORBIDDEN)))) {
+                    // bad credentials
                     mCredentialsValid = false;
-                    if (tryConnectionOnFailure) {
-                        alertUser("", "Credentials Invalid");
-                    }
+                    alertUser("", "Credentials Invalid");
                     // update Control status text
-                    TextView v = (TextView) findViewById(R.id.tv_inControlLabel);
-                    v.setText(R.string.heading_control_status_bad);
-                } else {
+                    mStatusBarStateText.setText(R.string.heading_control_status_bad);
+                    tryAgain = false;
+                } else if (result.equals(Integer.valueOf((HttpStatus.SC_REQUEST_TIMEOUT)))) {
+                    // update Control status text
+                    mStatusBarStateText.setText(R.string.heading_control_status_bad);
+                    // but keep polling
+                    tryAgain = true;
+                } else if (result.equals(Integer.valueOf((HttpStatus.SC_OK)))) {
                     // if success and we just connected
                     if ((mHandler != null) && !mCredentialsValid) {
                         // notify user
@@ -666,18 +803,17 @@ public class BrewingProgramListActivity extends Activity
                     }
                     mCredentialsValid = true;
                     // update Control status text
-                    TextView v = (TextView) findViewById(R.id.tv_inControlLabel);
                     if (mWibean.isBrewing()) {
-                        v.setText(R.string.heading_control_status_brewing);
+                        mStatusBarStateText.setText(R.string.heading_control_status_brewing);
                     } else if (mWibean.isHeating()) {
-                        v.setText(R.string.heading_control_status_heating);
+                        mStatusBarStateText.setText(R.string.heading_control_status_heating);
                     } else {
-                        v.setText(R.string.heading_control_status_cooling);
+                        mStatusBarStateText.setText(R.string.heading_control_status_cooling);
                     }
                     // and update the heat/sleep button by forcing a rebuild of the menus
                     invalidateOptionsMenu();
                     // update head temp display
-                    v = (TextView) findViewById(R.id.tv_headTemperature);
+                    TextView v = (TextView) findViewById(R.id.tv_headTemperature);
                     v.setText(new StringBuilder().append(mWibean.getHeadTemperature()).toString());
                     // if we have an Alarm fragment, update the remote UI state
                     AlarmFragment f = (AlarmFragment) getFragmentManager().findFragmentByTag(TAG_ALARM);
@@ -694,11 +830,30 @@ public class BrewingProgramListActivity extends Activity
                         f.setCredentialsInvalid();
                     }
                 }
+                if (tryAgain) {
+                    // query every 4 seconds when cold
+                    int queryInterval = 4000;
+                    if (mWibean.isHeating()) {
+                        // 2 seconds when heating
+                        queryInterval = 2000;
+                    } else if (mWibean.isBrewing()) {
+                        // and 1 second when  brewing
+                        queryInterval = 1000;
+                    }
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            temperaturePollLoop();
+                        }
+                    }, queryInterval);
+                }
+                if (mNotifyWhenHot && (mWibean.getHeadTemperature() >= mGoalTemperature)) {
+                    deliverHotNotifications();
+                    mNotifyWhenHot = false;
+                }
             } catch (Exception e) {
                 // if it fails, no worries
             }
-            // we just finished a connection attempt, if we were supposed to toggle this, do it.
-            tryConnectionOnFailure = false;
             mTempLoopMutex.release();
             makeNotBusy();
         }
@@ -720,7 +875,7 @@ public class BrewingProgramListActivity extends Activity
 
         protected void onPostExecute(Boolean result) {
             if (!result) {
-                alertUser(getString(R.string.dialog_ip_error_title), getString(R.string.dialog_ip_error_message));
+                alertUser(getString(R.string.alert_ip_error_title), getString(R.string.alert_ip_error_message));
             }
             makeNotBusy();
         }

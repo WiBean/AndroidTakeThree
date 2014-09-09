@@ -182,10 +182,7 @@ public class BrewingProgramListFragment extends ListFragment implements
         if (!(activity instanceof Callbacks)) {
             throw new IllegalStateException("Activity must implement fragment's callbacks.");
         }
-
         mCallbacks = (Callbacks) activity;
-
-        ((BrewingProgramListActivity) activity).onSectionAttached(1);
     }
 
     @Override

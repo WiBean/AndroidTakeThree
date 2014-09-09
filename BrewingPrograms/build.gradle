@@ -8,8 +8,8 @@ android {
         applicationId "com.jmnow.wibeantakethree.brewingprograms"
         minSdkVersion 16
         targetSdkVersion 19
-        versionCode 1
-        versionName '1.0'
+        versionCode 3
+        versionName '1.02'
         applicationId 'com.jmnow.wibeantakethree.brewingprograms'
     }
     compileOptions {
@@ -17,9 +17,14 @@ android {
         targetCompatibility JavaVersion.VERSION_1_7
     }
     buildTypes {
+        debug {
+            buildConfigField "boolean", "REPORT_ANALYTICS", "false"
+        }
         release {
+            buildConfigField "boolean", "REPORT_ANALYTICS", "true"
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            zipAlign true
         }
     }
     productFlavors {
@@ -28,7 +33,6 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:support-v4:19.+'
     // my stuff
     compile 'com.koushikdutta.ion:ion:1.2.4'
     compile 'com.squareup.okhttp:okhttp:2.0.+'
@@ -37,5 +41,9 @@ dependencies {
     // for annotations such as @IdRes
     compile 'com.android.support:support-annotations:+'
     compile files('libs/smartconfiglib.jar')
+    // for Google Analytics
+    compile 'com.google.android.gms:play-services:5.+'
+    // For wearable-capable notifications as well as all the other compat stuff
+    compile "com.android.support:support-v4:20.+"
 }
 apply plugin: 'retrolambda'

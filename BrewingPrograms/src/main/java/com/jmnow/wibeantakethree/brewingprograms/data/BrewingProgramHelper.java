@@ -65,18 +65,9 @@ public class BrewingProgramHelper extends SQLiteOpenHelper {
         // create brewing programs table
         db.execSQL(CREATE_BREWINGPROGRAM_TABLE);
         // add in some data
-        createHelper(db, "Starter Program", "A basic program", 70, 0, 0, 0);
-        createHelper(db, "Level One", "Some customization", 20, 20, 50, 0);
-        createHelper(db, "Heavy Delay", "Allows a great steep time", 15, 50, 60, 0);
-        createHelper(db, "Starter Program", "A basic program", 70, 0, 0, 0);
-        createHelper(db, "Level One", "Some customization", 20, 20, 50, 0);
-        createHelper(db, "Heavy Delay", "Allows a great steep time", 15, 50, 60, 0);
-        createHelper(db, "Starter Program", "A basic program", 70, 0, 0, 0);
-        createHelper(db, "Level One", "Some customization", 20, 20, 50, 0);
-        createHelper(db, "Heavy Delay", "Allows a great steep time", 15, 50, 60, 0);
-        createHelper(db, "Starter Program", "A basic program", 70, 0, 0, 0);
-        createHelper(db, "Level One", "Some customization", 20, 20, 50, 0);
-        createHelper(db, "Heavy Delay", "Allows a great steep time", 15, 50, 60, 0);
+        createHelper(db, "Starter Program", "A basic program", 300, 0, 0, 0);
+        createHelper(db, "Level One", "Some customization", 100, 30, 200, 20);
+        createHelper(db, "Heavy Delay", "Allows a great steep time", 30, 50, 250, 0);
     }
 
     @Override

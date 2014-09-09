@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Spinner;
 import android.widget.Switch;
@@ -19,7 +20,9 @@ import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanSparkState;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.TimeZone;
 
 
@@ -31,7 +34,8 @@ import java.util.TimeZone;
  * Use the {@link AlarmFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class AlarmFragment extends Fragment {
+public class AlarmFragment extends Fragment implements
+        View.OnClickListener {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_ALARMONTIME = "alarmOnTime";
@@ -79,11 +83,11 @@ public class AlarmFragment extends Fragment {
         int minutesAfter = prefs.getInt(PREF_ALARM_TIME_HOUR, 0) * 60;
         minutesAfter += prefs.getInt(PREF_ALARM_TIME_MINUTE, 0);
         mLocalAlarm.setOnTimeAsMinutesAfterMidnight(minutesAfter);
-        mLocalAlarm.setUtcOffset(prefs.getInt(PREF_ALARM_TIMEZONE, 0));
+        mLocalAlarm.setUtcOffset(prefs.getInt(PREF_ALARM_TIMEZONE, getDefaultTimeZone()));
         // if we have a bundle, bring it in
         if (getArguments() != null) {
             mRemoteAlarm.setOnTimeAsMinutesAfterMidnight(getArguments().getInt(ARG_ALARMONTIME, 480));
-            mRemoteAlarm.setUtcOffset(getArguments().getInt(ARG_ALARMTIMEZONE, 0));
+            mRemoteAlarm.setUtcOffset(getArguments().getInt(ARG_ALARMTIMEZONE, getDefaultTimeZone()));
         }
         if (mRemoteAlarm.getAlarmArmed()) {
             mLocalAlarm = mRemoteAlarm;
@@ -119,30 +123,46 @@ public class AlarmFragment extends Fragment {
                 }
                 mIgnoreNextSpinnerEvent = false;
             }
+
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
 
         // populate the TZ spinner
-        String[] TZ = TimeZone.getAvailableIDs();
         ArrayList<String> TZ1 = new ArrayList<String>();
-        for (int i = 0; i < TZ.length; i++) {
-            TimeZone tz = TimeZone.getTimeZone(TZ[i]);
-
-            String display = new DecimalFormat("+00;-00").format(tz.getRawOffset() / 3600000) + " " + tz.getDisplayName();
-            if (!TZ1.contains(display)) {
-                TZ1.add(display);
+        // if we have system TZ info use it, otherwise, take a default array
+        //if( TZ.length > 0 ) {
+        if (false) { // for now make this false, because the timezones are confusing when shifted by DST
+            String[] TZ = TimeZone.getAvailableIDs();
+            for (int i = 0; i < TZ.length; i++) {
+                TimeZone tz = TimeZone.getTimeZone(TZ[i]);
+                String display = new DecimalFormat("+00;-00").format(tz.getRawOffset() / 3600000) + " " + tz.getDisplayName();
+                if (!TZ1.contains(display)) {
+                    TZ1.add(display);
+                }
             }
+            Collections.sort(TZ1, Collections.reverseOrder());
+            // find the first -01 netry
+            int lastIndex = -1;
+            for (int k = 0; k < TZ1.size(); ++k) {
+                if (TZ1.get(k).startsWith("-01")) {
+                    lastIndex = k;
+                }
+            }
+            lastIndex += 1;
+            if (lastIndex <= TZ1.size()) {
+                // Then grab the negative chunk, reverse it, and prepend it
+                Collections.sort(TZ1.subList(lastIndex, TZ1.size()));
+            }
+        } else {
+            // use the default array
+            TZ1 = new ArrayList<>(Arrays.asList(getActivity().getResources().getStringArray(R.array.simple_timezone_list)));
         }
-        Collections.sort(TZ1, Collections.reverseOrder());
-        // find the first -01 netry
-        int lastIndex = TZ1.lastIndexOf("+14 Line Islands Time");
-        // Then grab the negative chunk, reverse it, and prepend it
-        Collections.sort(TZ1.subList(lastIndex, TZ1.size()));
-        ArrayAdapter<String> tzAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_dropdown_item, TZ1);
+        ArrayAdapter<String> tzAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, TZ1);
         mIgnoreNextSpinnerEvent = true;
         mTimeZoneSpinner.setAdapter(tzAdapter);
+        ((Button) v.findViewById(R.id.btn_takeTimeZone)).setOnClickListener(this);
 
         updateUiFromAlarms();
         return v;
@@ -169,6 +189,10 @@ public class AlarmFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
+        storePrefs();
+    }
+
+    private void storePrefs() {
         // save the users preferences
         SharedPreferences.Editor prefsEdit = getActivity().getPreferences(Context.MODE_PRIVATE).edit();
         prefsEdit.putInt(PREF_ALARM_TIME_HOUR, mTimePicker.getCurrentHour());
@@ -183,6 +207,39 @@ public class AlarmFragment extends Fragment {
         mListener = null;
     }
 
+    // handle onClick in the fragment, yay Android Fragments
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn_takeTimeZone:
+                takeDefaultTimeZone();
+                break;
+        }
+    }
+
+
+    private void takeDefaultTimeZone() {
+        spinnerSetSelectionChecked(mTimeZoneSpinner, findIntegerInTimeZoneSpinner(getDefaultTimeZone()));
+    }
+
+    private int getDefaultTimeZone() {
+        TimeZone tz = TimeZone.getDefault();
+        final int combinedOffset = tz.getRawOffset() / 3600000 + (tz.inDaylightTime(new Date()) ? 1 : 0);
+        return combinedOffset;
+    }
+
+    private void spinnerSetSelectionChecked(Spinner spin, int index) {
+        spinnerSetSelectionChecked(spin, index, false);
+    }
+
+    private void spinnerSetSelectionChecked(Spinner spin, int index, boolean animate) {
+        final int count = spin.getAdapter().getCount();
+        if ((count > 0) && (index < count)) {
+            spin.setSelection(index, animate);
+        } else { // do nothing
+        }
+    }
+
     private void updateUiFromAlarms() {
         // if we don't have UI yet die
         if (!this.isResumed()) {
@@ -193,10 +250,10 @@ public class AlarmFragment extends Fragment {
         SharedPreferences prefs = getActivity().getPreferences(Context.MODE_PRIVATE);
         mIgnoreNextSpinnerEvent = true;
         if (!mRemoteAlarm.getAlarmArmed() ||
-                (mLocalAlarm.getUtcOffset() == getIntegerFromTimeZoneSpinner(prefs.getInt(PREF_ALARM_TIMEZONE, 0)))) {
-            mTimeZoneSpinner.setSelection(prefs.getInt(PREF_ALARM_TIMEZONE, 0));
+                (mLocalAlarm.getUtcOffset() == getIntegerFromTimeZoneSpinner(prefs.getInt(PREF_ALARM_TIMEZONE, getDefaultTimeZone())))) {
+            spinnerSetSelectionChecked(mTimeZoneSpinner, prefs.getInt(PREF_ALARM_TIMEZONE, getDefaultTimeZone()));
         } else {
-            mTimeZoneSpinner.setSelection(findIntegerInTimeZoneSpinner(mLocalAlarm.getUtcOffset()));
+            spinnerSetSelectionChecked(mTimeZoneSpinner, findIntegerInTimeZoneSpinner(mLocalAlarm.getUtcOffset()));
         }
         setAlarmTime(mLocalAlarm.getOnTimeAsMinutesAfterMidnight());
 
@@ -255,7 +312,16 @@ public class AlarmFragment extends Fragment {
         if (mTimeZoneSpinner == null) {
             return 0;
         }
-        String text = ((String) mTimeZoneSpinner.getItemAtPosition(position)).substring(0, 3);
+        try {
+            String text = ((String) mTimeZoneSpinner.getItemAtPosition(position)).substring(0, 3);
+            return getIntegerFromTimeZoneString(text);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    private int getIntegerFromTimeZoneString(String text) {
         text = text.substring((text.charAt(0) == '+') ? 1 : 0, 3);
         return Integer.valueOf(text);
     }

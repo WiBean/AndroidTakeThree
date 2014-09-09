@@ -2,40 +2,48 @@
 <pre-dex-items>
 
     <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\support-annotations-21.0.0-rc1-52f7c00f71c2f300324a64c07d67a16b1aa498d2.jar"
-        jar="C:\Users\John-Michael\AppData\Local\Android\android-studio\sdk\extras\android\m2repository\com\android\support\support-annotations\21.0.0-rc1\support-annotations-21.0.0-rc1.jar"
-        jumboMode="false" revision="19.1.0" sha1="57c343f05b73b923bf2502b05851dbfe12193dcb" />
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\classes-f13e2640720bf2d899c4986c2b0f09ffdbd1bfc8.jar"
+        jar="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\exploded-aar\com.android.support\support-v4\20.0.0\classes.jar"
+        jumboMode="false" revision="19.1.0" sha1="8694693636ab36910c8100ce527c258ff3ebece0" />
     <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\android-integration-3.1.0-1287a834787f2738b903d8152a4737b34d486932.jar"
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\android-integration-3.1.0-1287a834787f2738b903d8152a4737b34d486932.jar"
         jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.google.zxing\android-integration\3.1.0\52707c1c0801b4e1c0ca9bdbabd2dae20d8564d7\android-integration-3.1.0.jar"
         jumboMode="false" revision="19.1.0" sha1="52707c1c0801b4e1c0ca9bdbabd2dae20d8564d7" />
     <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\smartconfiglib-abbd364a33469a48072283b0207eb1a3f97ef722.jar"
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\classes-17b9ce4fa3871333a2057f12296bf9f0e0a268d0.jar"
+        jar="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\exploded-aar\com.google.android.gms\play-services\5.2.08\classes.jar"
+        jumboMode="false" revision="19.1.0" sha1="1ed7a7a05185651f9af41ad93711cb96b66f331c" />
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\smartconfiglib-abbd364a33469a48072283b0207eb1a3f97ef722.jar"
         jar="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\libs\smartconfiglib.jar"
         jumboMode="false" revision="19.1.0" sha1="c0a87bc3509aa15127ace1224dc431f501b9e071" />
     <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\gson-2.2.4-69ab64174618a1d3d6bc835427cfb77d209e6584.jar"
-        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.google.code.gson\gson\2.2.4\a60a5e993c98c864010053cb901b7eab25306568\gson-2.2.4.jar"
-        jumboMode="false" revision="19.1.0" sha1="a60a5e993c98c864010053cb901b7eab25306568" />
-    <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\support-v4-19.1.0-b186bc94d828970fdf9a443b7b330facab2fa14d.jar"
-        jar="C:\Users\John-Michael\AppData\Local\Android\android-studio\sdk\extras\android\m2repository\com\android\support\support-v4\19.1.0\support-v4-19.1.0.jar"
-        jumboMode="false" revision="19.1.0" sha1="85f201b380937e61a9dce6ca90ccf6872abbfb67" />
-    <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\ion-1.2.4-10ae35ae51c6801fc3eb865ace52b80ae76ce2db.jar"
-        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.koushikdutta.ion\ion\1.2.4\776baf5cac8eb4145dc0901254122cf956a784e3\ion-1.2.4.jar"
-        jumboMode="false" revision="19.1.0" sha1="776baf5cac8eb4145dc0901254122cf956a784e3" />
-    <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\okhttp-2.0.0-93a0ce5ccff7b4a07903547f9c5842d1d44ae77c.jar"
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\okhttp-2.0.0-93a0ce5ccff7b4a07903547f9c5842d1d44ae77c.jar"
         jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.squareup.okhttp\okhttp\2.0.0\4c8d1536dba3812cc1592090dc20c47a4ed3c35e\okhttp-2.0.0.jar"
         jumboMode="false" revision="19.1.0" sha1="4c8d1536dba3812cc1592090dc20c47a4ed3c35e" />
     <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\okio-1.0.0-bdf8a6192e3e78da1a0e644ffebf00d26711656d.jar"
-        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.squareup.okio\okio\1.0.0\2534c458682c73f5b9871131ab3098d3f987ca3\okio-1.0.0.jar"
-        jumboMode="false" revision="19.1.0" sha1="02534c458682c73f5b9871131ab3098d3f987ca3" />
-    <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\androidasync-1.2.4-c1068bfb54a086a038f9bafde9987ecdab99276f.jar"
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\androidasync-1.2.4-c1068bfb54a086a038f9bafde9987ecdab99276f.jar"
         jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.koushikdutta.async\androidasync\1.2.4\8dc7111050ee5f13a54b1206d47fee856159b2aa\androidasync-1.2.4.jar"
         jumboMode="false" revision="19.1.0" sha1="8dc7111050ee5f13a54b1206d47fee856159b2aa" />
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\internal_impl-20.0.0-b3e23fe30d55e2f9591410f66669e30ec909ed78.jar"
+        jar="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\exploded-aar\com.android.support\support-v4\20.0.0\libs\internal_impl-20.0.0.jar"
+        jumboMode="false" revision="19.1.0" sha1="e40b3078e3fbd353c9f44da8df25a8fc0078209d" />
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\support-annotations-21.0.0-rc1-52f7c00f71c2f300324a64c07d67a16b1aa498d2.jar"
+        jar="C:\Users\John-Michael\AppData\Local\Android\android-studio\sdk\extras\android\m2repository\com\android\support\support-annotations\21.0.0-rc1\support-annotations-21.0.0-rc1.jar"
+        jumboMode="false" revision="19.1.0" sha1="57c343f05b73b923bf2502b05851dbfe12193dcb" />
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\gson-2.2.4-69ab64174618a1d3d6bc835427cfb77d209e6584.jar"
+        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.google.code.gson\gson\2.2.4\a60a5e993c98c864010053cb901b7eab25306568\gson-2.2.4.jar"
+        jumboMode="false" revision="19.1.0" sha1="a60a5e993c98c864010053cb901b7eab25306568" />
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\ion-1.2.4-10ae35ae51c6801fc3eb865ace52b80ae76ce2db.jar"
+        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.koushikdutta.ion\ion\1.2.4\776baf5cac8eb4145dc0901254122cf956a784e3\ion-1.2.4.jar"
+        jumboMode="false" revision="19.1.0" sha1="776baf5cac8eb4145dc0901254122cf956a784e3" />
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\release\okio-1.0.0-bdf8a6192e3e78da1a0e644ffebf00d26711656d.jar"
+        jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.squareup.okio\okio\1.0.0\2534c458682c73f5b9871131ab3098d3f987ca3\okio-1.0.0.jar"
+        jumboMode="false" revision="19.1.0" sha1="02534c458682c73f5b9871131ab3098d3f987ca3" />
 
 </pre-dex-items>

@@ -248,48 +248,69 @@
                 android:text="0" />
         </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:labelFor="@+id/tv_createdAt"
-            android:text="Created At:" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@id/tv_createdAt"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
+            <TextView
+                android:id="@+id/tv_createdAt_label"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_alignParentLeft="true"
+                android:labelFor="@+id/tv_createdAt"
+                android:text="Created At:" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:labelFor="@+id/tv_modifiedAt"
-            android:text="Modified At:" />
+            <TextView
+                android:id="@id/tv_createdAt"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_alignParentLeft="true"
+                android:layout_below="@+id/tv_createdAt_label"
+                android:text="2014-01-01 01:23:45" />
 
-        <TextView
-            android:id="@id/tv_modifiedAt"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
+            <TextView
+                android:id="@+id/tv_modifiedAt_label"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_alignParentRight="true"
+                android:labelFor="@+id/tv_modifiedAt"
+                android:text="Modified At:" />
+
+            <TextView
+                android:id="@+id/tv_modifiedAt"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_alignParentRight="true"
+                android:layout_below="@+id/tv_modifiedAt_label"
+                android:text="2014-01-01 01:23:45" />
+        </RelativeLayout>
 
 
-        <Button
-            android:id="@+id/btn_brew"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:layout_margin="5dp"
-            android:enabled="false"
-            android:onClick="brewButtonClicked"
-            android:text="@string/action_brew"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <Button
-            android:id="@+id/btn_programDiscardChanges"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:layout_margin="5dp"
-            android:enabled="false"
-            android:text="@string/action_discardProgramChanges"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            <Button
+                android:id="@+id/btn_brew"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_margin="5dp"
+                android:enabled="false"
+                android:onClick="brewButtonClicked"
+                android:text="@string/action_brew"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <Button
+                android:id="@+id/btn_programDiscardChanges"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_margin="5dp"
+                android:enabled="false"
+                android:text="@string/action_discardProgramChanges"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+        </RelativeLayout>
+
     </LinearLayout>
 </ScrollView>

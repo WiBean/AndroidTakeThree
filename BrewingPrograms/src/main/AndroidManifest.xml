@@ -36,8 +36,11 @@
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- Permissions needed for TI SmartConfig -->
+    <!-- Permissions for Google Analytics -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- END Google Analytics Permissions -->
+    <!-- Permissions for TI SmartConfig -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />

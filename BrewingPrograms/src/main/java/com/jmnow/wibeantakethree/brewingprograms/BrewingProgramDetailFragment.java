@@ -46,7 +46,9 @@ public class BrewingProgramDetailFragment extends Fragment implements
      * The LOADER instance used here must be identified, whatever you want
      */
     private static final int PROGRAMS_LOADER = 0;
-    public TextWatcher mDifferenceToggle = new TextWatcher() {
+    // Event listener
+    BrewingProgramDetailCallbacks mListener;
+    private TextWatcher mDifferenceToggle = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
         }
@@ -60,8 +62,18 @@ public class BrewingProgramDetailFragment extends Fragment implements
             updateUiOnChange();
         }
     };
-    // Event listener
-    BrewingProgramDetailCallbacks mListener;
+    // ensure the controls have at least a zero when they lose focus
+    private View.OnFocusChangeListener mFocusLostChecker = new View.OnFocusChangeListener() {
+        @Override
+        public void onFocusChange(View v, boolean hasFocus) {
+            if (!hasFocus) {
+                EditText et = (EditText) v;
+                if (et.length() == 0) {
+                    et.setText("0");
+                }
+            }
+        }
+    };
     // Do we have unsaved changes?
     private boolean mUnsavedChanges = false;
     //for the share button
@@ -121,6 +133,18 @@ public class BrewingProgramDetailFragment extends Fragment implements
         ((EditText) rootView.findViewById(R.id.et_offForFour)).addTextChangedListener(mDifferenceToggle);
         ((EditText) rootView.findViewById(R.id.et_onForFive)).addTextChangedListener(mDifferenceToggle);
         ((EditText) rootView.findViewById(R.id.et_offForFive)).addTextChangedListener(mDifferenceToggle);
+
+        // setup on focus lost checker
+        rootView.findViewById(R.id.et_onForOne).setOnFocusChangeListener(mFocusLostChecker);
+        rootView.findViewById(R.id.et_offForOne).setOnFocusChangeListener(mFocusLostChecker);
+        rootView.findViewById(R.id.et_onForTwo).setOnFocusChangeListener(mFocusLostChecker);
+        rootView.findViewById(R.id.et_offForTwo).setOnFocusChangeListener(mFocusLostChecker);
+        rootView.findViewById(R.id.et_onForThree).setOnFocusChangeListener(mFocusLostChecker);
+        rootView.findViewById(R.id.et_offForThree).setOnFocusChangeListener(mFocusLostChecker);
+        rootView.findViewById(R.id.et_onForFour).setOnFocusChangeListener(mFocusLostChecker);
+        rootView.findViewById(R.id.et_offForFour).setOnFocusChangeListener(mFocusLostChecker);
+        rootView.findViewById(R.id.et_onForFive).setOnFocusChangeListener(mFocusLostChecker);
+        rootView.findViewById(R.id.et_offForFive).setOnFocusChangeListener(mFocusLostChecker);
         return rootView;
     }
 
@@ -308,53 +332,43 @@ public class BrewingProgramDetailFragment extends Fragment implements
         Integer[] onTimes = mItem.getOnTimes();
         Integer[] offTimes = mItem.getOffTimes();
         v = (EditText) getView().findViewById(R.id.et_onForOne);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(onTimes[0])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[0])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForOne);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(offTimes[0])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[0])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_onForTwo);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(onTimes[1])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[1])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForTwo);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(offTimes[1])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[1])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_onForThree);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(onTimes[2])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[2])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForThree);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(offTimes[2])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[2])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_onForFour);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(onTimes[3])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[3])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForFour);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(offTimes[3])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[3])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_onForFive);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(onTimes[4])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[4])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForFive);
-        ifEmptySetZero(v);
-        if (!Integer.valueOf(v.getText().toString()).equals(offTimes[4])) {
+        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[4])) {
             return true;
         }
         return false;

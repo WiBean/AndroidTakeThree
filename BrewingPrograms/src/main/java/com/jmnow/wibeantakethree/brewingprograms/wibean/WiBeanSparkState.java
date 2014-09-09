@@ -23,6 +23,12 @@ public class WiBeanSparkState {
     public static final String PREF_KEY_DEVICE_ID = "SPARK_DEVICE_ID";
     public static final String PREF_KEY_ACCESS_TOKEN = "SPARK_ACCESS_TOKEN";
     public static final String PREF_KEY_BREW_TEMP = "BREW_TEMP_IDEAL";
+
+    public static final int RETURN_CODE_PUMP_SUCCESS = 1;
+    public static final int RETURN_CODE_PUMP_INVALID_PROGRAM = -1;
+    public static final int RETURN_CODE_PUMP_BUSY = -2;
+    public static final int RETURN_CODE_PUMP_CANCELLED = 2;
+
     public static final MediaType TEXT
             = MediaType.parse("application/json; charset=utf-8");
     // constants
@@ -190,11 +196,15 @@ public class WiBeanSparkState {
         */
     }
 
+    /**
+     * Sends a program to the machine for brewing.
+     *
+     * @param theProgram - program to brew
+     * @return -1 on general failure
+     * -2 if a program is already brewing
+     */
     // reset control of the WiBean device so the machine acts as if we aren't even there.
-    public boolean runBrewProgram(BrewingProgram theProgram) {
-        if (!mHeating) {
-            return false;
-        }
+    public int runBrewProgram(BrewingProgram theProgram) {
         boolean success = false;
         Integer[] onTimes = theProgram.getOnTimes();
         Integer[] offTimes = theProgram.getOffTimes();
@@ -221,19 +231,19 @@ public class WiBeanSparkState {
             if ((response.code() == 200) &&
                     bodyAsObject.has("return_value")) {
                 int returnCode = Integer.valueOf(bodyAsObject.getString("return_value"));
-                return (returnCode == 1);
+                return returnCode;
             }
         } catch (Exception e) {
             //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
             System.out.println("runProgram Failed: " + e.getMessage() + ' ' + e.getClass());
         }
-        return false;
+        return 1;
     }
 
 
     // Query and update status
     // reset control of the WiBean device so the machine acts as if we aren't even there.
-    public boolean queryStatus() {
+    public int queryStatus() {
         String targetURL = assembleBaseUrl() + "status?" + "access_token=" + mSparkAccessToken;
         Request request = new Request.Builder().url(targetURL).build();
         try {
@@ -253,21 +263,17 @@ public class WiBeanSparkState {
                 mBrewing = statusAsObject.getBoolean("b");
                 mCurrentHeadTemperatureInCelsius = (float) statusAsObject.getDouble("t_h");
                 mCurrentAmbientTemperatureInCelsius = (float) statusAsObject.getDouble("t_a");
-                return true;
             }
-            if ((response.code() == 408)) {
-                return false;
-            }
-            if ((response.code() == 403)) {
-                // signifies bad credentials
-                return false;
-            }
+            // 200 is success
+            // 408 is timeout
+            // 403 is bad credentials
+            return Integer.valueOf(response.code());
         } catch (Exception e) {
             //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
             System.out.println("queryStatus Failed: " + e.getMessage() + ' ' + e.getClass());
         }
         // if we get here, something went wrong
-        return false;
+        return -1;
     }
 
     /**

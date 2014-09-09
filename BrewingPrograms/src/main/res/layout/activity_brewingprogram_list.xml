@@ -10,13 +10,26 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent">
 
+        <FrameLayout
+            android:id="@+id/list_content_container"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_above="@+id/pb_indeterminateLow" />
+
+        <ProgressBar
+            android:id="@+id/pb_indeterminateLow"
+            style="@android:style/Widget.Holo.Light.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/footer_layout"
+            android:indeterminate="true" />
         <!-- Footer aligned to bottom -->
         <LinearLayout
             android:id="@+id/footer_layout"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:background="#FF6600"
+            android:background="#c3431e0d"
             android:orientation="horizontal">
 
             <TextView
@@ -26,9 +39,8 @@
                 android:layout_marginBottom="5dp"
                 android:layout_marginLeft="5dp"
                 android:layout_marginTop="5dp"
-                android:background="#FC0"
                 android:text="Head: "
-                android:textColor="#000"
+                android:textColor="#ffffffff"
                 android:textSize="20sp" />
 
             <TextView
@@ -37,9 +49,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="5dp"
                 android:layout_marginTop="5dp"
-                android:background="#FC0"
                 android:text="\??"
-                android:textColor="#000"
+                android:textColor="#ffffffff"
                 android:textSize="20sp" />
 
             <TextView
@@ -49,9 +60,8 @@
                 android:layout_marginBottom="5dp"
                 android:layout_marginRight="5dp"
                 android:layout_marginTop="5dp"
-                android:background="#FC0"
                 android:text=" °C"
-                android:textColor="#000"
+                android:textColor="#ffffffff"
                 android:textSize="20sp" />
             <!-- This is needed to smush the text against the right wall -->
             <View
@@ -67,19 +77,13 @@
                 android:layout_marginLeft="5dp"
                 android:layout_marginRight="5dp"
                 android:layout_marginTop="5dp"
-                android:background="#FC0"
+                android:autoText="false"
                 android:gravity="right"
                 android:text="@string/heading_control_status_bad"
-                android:textColor="#000"
+                android:textColor="#ffffffff"
                 android:textSize="20sp"
                 android:textStyle="bold" />
         </LinearLayout>
-
-        <FrameLayout
-            android:id="@+id/list_content_container"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:layout_above="@id/footer_layout" />
     </RelativeLayout>
     <!-- android:layout_gravity="start" tells DrawerLayout to treat
      this as a sliding drawer on the left side for left-to-right

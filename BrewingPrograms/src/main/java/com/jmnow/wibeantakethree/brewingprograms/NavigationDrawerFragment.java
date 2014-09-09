@@ -89,10 +89,10 @@ public class NavigationDrawerFragment extends Fragment {
         // load nav drawer menu titles and icons
         String[] navMenuTitles = getResources().getStringArray(R.array.nav_drawer_items);
         TypedArray navMenuIcons = getResources().obtainTypedArray(R.array.nav_drawer_icons);
-        navDrawerItems.add(new NavDrawerItem(navMenuTitles[0], navMenuIcons.getResourceId(1, -1), false, ""));
-        navDrawerItems.add(new NavDrawerItem(navMenuTitles[1], navMenuIcons.getResourceId(2, -1), false, ""));
-        navDrawerItems.add(new NavDrawerItem(navMenuTitles[2], navMenuIcons.getResourceId(0, -1), false, ""));
-        navDrawerItems.add(new NavDrawerItem(navMenuTitles[3], navMenuIcons.getResourceId(0, -1), false, ""));
+        navDrawerItems.add(new NavDrawerItem(navMenuTitles[0], navMenuIcons.getResourceId(0, -1), false, ""));
+        navDrawerItems.add(new NavDrawerItem(navMenuTitles[1], navMenuIcons.getResourceId(1, -1), false, ""));
+        navDrawerItems.add(new NavDrawerItem(navMenuTitles[2], navMenuIcons.getResourceId(2, -1), false, ""));
+        navDrawerItems.add(new NavDrawerItem(navMenuTitles[3], navMenuIcons.getResourceId(3, -1), false, ""));
         mDrawerListView.setAdapter(new NavDrawerArrayAdapter(
                 getActionBar().getThemedContext(),
                 R.layout.nav_drawer_list_item,

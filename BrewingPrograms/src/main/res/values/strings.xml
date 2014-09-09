@@ -16,9 +16,36 @@
     <string name="action_createProgram">Create!</string>
     <string name="action_connecting_title">Connecting</string>
     <string name="action_pleaseWait">Please wait...</string>
-
     <string name="action_activatingHeat">Activating Heat...</string>
     <string name="action_disablingHeat">Hibernating...</string>
+
+    <string-array name="simple_timezone_list">
+        <item>-12 GMT-12:00</item>
+        <item>-11 GMT-11:00</item>
+        <item>-10 GMT-10:00</item>
+        <item>-09 GMT-09:00</item>
+        <item>-08 GMT-08:00</item>
+        <item>-07 GMT-07:00</item>
+        <item>-06 GMT-06:00</item>
+        <item>-05 GMT-05:00</item>
+        <item>-04 GMT-04:00</item>
+        <item>-03 GMT-03:00</item>
+        <item>-02 GMT-02:00</item>
+        <item>-01 GMT-01:00</item>
+        <item>+00 GMT+00:00</item>
+        <item>+01 GMT+01:00</item>
+        <item>+02 GMT+02:00</item>
+        <item>+03 GMT+03:00</item>
+        <item>+04 GMT+04:00</item>
+        <item>+05 GMT+05:00</item>
+        <item>+06 GMT+06:00</item>
+        <item>+07 GMT+07:00</item>
+        <item>+08 GMT+08:00</item>
+        <item>+09 GMT+09:00</item>
+        <item>+10 GMT+10:00</item>
+        <item>+11 GMT+11:00</item>
+        <item>+12 GMT+12:00</item>
+    </string-array>
 
     <string-array name="nav_drawer_items">
         <item>Brew!</item>
@@ -29,9 +56,10 @@
     <!-- Nav Drawer List Item Icons -->
     <!-- Keep them in order as the titles are in -->
     <array name="nav_drawer_icons">
-        <item>@drawable/ic_home</item>
         <item>@drawable/coffee_cup_icon</item>
         <item>@drawable/ic_whats_hot</item>
+        <item>@drawable/ic_home</item>
+        <item>@drawable/ic_action_network_wifi</item>
     </array>
 
     <string name="title_takeControl">Settings</string>
@@ -45,7 +73,8 @@
     <string name="heading_control_status_cooling">Cooling</string>
     <string name="heading_control_status_bad">No Connection</string>
     <string name="heading_control_status_brewing">Brewing!</string>
-    <string name="heading_control_status_heating">Heating</string>
+    <string name="heading_control_status_heating">Heat On</string>
+    <string name="heading_control_status_connecting">Connecting...</string>
 
     <string name="heading_program_unit_description">*All times given in units of 100ms</string>
     <string name="heading_example_program_name">Example Program Title</string>
@@ -56,26 +85,31 @@
     <string name="notify_changesSavedFailure">Failed to save changes!</string>
     <string name="notify_wibeanConnectionSuccess">WiBean connected!</string>
     <string name="notify_brewingFailure_title">Failed to brew</string>
-    <string name="notify_brewingFailure_message">Please check that you are connected and the heat
+    <string name="notify_brewingFailure_message_error">Please check that you are connected and the heat
     is turned on.</string>
+    <string name="notify_brewingFailure_message_busy">The machine is currently brewing another program.
+    Please wait until it is finished and try again.</string>
     <string name="notify_brewSuccess">Enjoy your coffee!</string>
+    <string name="notify_brewCancelled">Brewing stopped!</string>
     <string name="notify_alarmUpdate_title">Updating Alarm Settings</string>
+    <string name="notify_goalTemperatureAchieved">Espresso machine is hot!</string>
+    <string name="notify_goalTemperatureAchieved_prefix">Current temperature is\u0020</string>
+    <string name="notify_goalTemperatureAchieved_suffix">°C</string>
 
 
     <string name="loading_message">Working, please wait...</string>
     <string name="label_ip_address">WiBean IP: </string>
     <string name="hint_ip_address">192.168.1.107</string>
-    <string name="dialog_ip_error_message">Could not connect to the WiBean.\n
-            Please check the access credentials.</string>
-    <string name="dialog_ip_error_title">Connection Error</string>
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="hint_goal_temperature">95 °C</string>
     <string name="label_goalTemperature">Goal Temp (°C):</string>
-    <string name="filter_title_viewBrewingProgram">WiBean Brewing Program</string>
-    <string name="description_list_item_icon">List item icon</string>
     <string name="label_accessToken">Access Token</string>
     <string name="label_device_id">Device ID</string>
-    <string name="action_testCredentials">Test Credentials</string>
+    <string name="action_testCredentials">Save Settings</string>
+    <string name="action_testCredentials_toast">Settings saved!</string>
+
+    <string name="filter_title_viewBrewingProgram">WiBean Brewing Program</string>
+    <string name="description_list_item_icon">List item icon</string>
+
 
     <!-- Strings for the SmartConfig screen -->
     <string name="ssid_label">SSID</string>
@@ -97,6 +131,16 @@
     the Settings tab.</string>
     <string name="alert_connectionFailure">Connection failed!  An unexpected error was encountered
     during the connection process.  Please try again.</string>
+    <string name="alert_ip_error_message">Could not connect to the WiBean.\n
+            Please check the access credentials.</string>
+    <string name="alert_ip_error_title">Connection Error</string>
+
+
+    <string name="alarm_title">Automatic Pre-Heat</string>
+    <string name="alarm_description">Choose a time at which your WiBean will automatically
+    power on and begin heating.</string>
+    <string name="alarm_timezone_label">Timezone</string>
+    <string name="alarm_timezone_findButton">Determine my timezone</string>
 
 
 </resources>

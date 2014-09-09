@@ -82,7 +82,8 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="androidasync-1.2.4" level="project" />
     <orderEntry type="library" exported="" name="gson-2.2.4" level="project" />
-    <orderEntry type="library" exported="" name="support-v4-19.1.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-5.2.08" level="project" />
+    <orderEntry type="library" exported="" name="support-v4-20.0.0" level="project" />
     <orderEntry type="library" exported="" name="ion-1.2.4" level="project" />
     <orderEntry type="library" exported="" name="okhttp-2.0.0" level="project" />
     <orderEntry type="library" exported="" name="android-integration-3.1.0" level="project" />
