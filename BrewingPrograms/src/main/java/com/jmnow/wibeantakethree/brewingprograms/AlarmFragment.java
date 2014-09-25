@@ -8,22 +8,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TimePicker;
 
 import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanSparkState;
-
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.TimeZone;
 
 
 /**
@@ -40,19 +29,15 @@ public class AlarmFragment extends Fragment implements
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_ALARMONTIME = "alarmOnTime";
     private static final String ARG_ALARMTIMEZONE = "alarmTimeZone";
-    private static final String PREF_ALARM_TIME_HOUR = "alarmTimeHour";
-    private static final String PREF_ALARM_TIME_MINUTE = "alarmTimeMinute";
-    private static final String PREF_ALARM_TIMEZONE = "alarmTimeZone";
+
 
     private WiBeanSparkState.WiBeanAlarmPackV1 mRemoteAlarm = new WiBeanSparkState.WiBeanAlarmPackV1();
     private WiBeanSparkState.WiBeanAlarmPackV1 mLocalAlarm = new WiBeanSparkState.WiBeanAlarmPackV1();
     private WiBeanAlarmFragmentInteractionListener mListener;
 
     private TimePicker mTimePicker;
-    private Spinner mTimeZoneSpinner;
     private Switch mArmedSwitch;
-    private boolean mIgnoreNextSwitchEvent = false;
-    private boolean mIgnoreNextSpinnerEvent = false;
+    private Button mSaveAlarmButton;
 
     public AlarmFragment() {
         // Required empty public constructor
@@ -80,17 +65,17 @@ public class AlarmFragment extends Fragment implements
         super.onCreate(savedInstanceState);
         // pull in any case from prefs
         SharedPreferences prefs = getActivity().getPreferences(Context.MODE_PRIVATE);
-        int minutesAfter = prefs.getInt(PREF_ALARM_TIME_HOUR, 0) * 60;
-        minutesAfter += prefs.getInt(PREF_ALARM_TIME_MINUTE, 0);
+        int minutesAfter = prefs.getInt(WiBeanSparkState.PREF_KEY_ALARM_TIME_HOUR, 0) * 60;
+        minutesAfter += prefs.getInt(WiBeanSparkState.PREF_KEY_ALARM_TIME_MINUTE, 0);
         mLocalAlarm.setOnTimeAsMinutesAfterMidnight(minutesAfter);
-        mLocalAlarm.setUtcOffset(prefs.getInt(PREF_ALARM_TIMEZONE, getDefaultTimeZone()));
+        mLocalAlarm.setUtcOffset(prefs.getInt(WiBeanSparkState.PREF_KEY_DEVICE_TIMEZONE, 0));
         // if we have a bundle, bring it in
         if (getArguments() != null) {
             mRemoteAlarm.setOnTimeAsMinutesAfterMidnight(getArguments().getInt(ARG_ALARMONTIME, 480));
-            mRemoteAlarm.setUtcOffset(getArguments().getInt(ARG_ALARMTIMEZONE, getDefaultTimeZone()));
+            mRemoteAlarm.setUtcOffset(getArguments().getInt(ARG_ALARMTIMEZONE, 0));
         }
         if (mRemoteAlarm.getAlarmArmed()) {
-            mLocalAlarm = mRemoteAlarm;
+            mLocalAlarm = new WiBeanSparkState.WiBeanAlarmPackV1(mRemoteAlarm);
         }
     }
 
@@ -101,73 +86,12 @@ public class AlarmFragment extends Fragment implements
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_alarm, container, false);
         mTimePicker = (TimePicker) v.findViewById(R.id.tp_timePicker);
-        mTimeZoneSpinner = (Spinner) v.findViewById(R.id.spn_dstOffset);
         mArmedSwitch = (Switch) v.findViewById(R.id.sw_toggleAlarm);
-
-        mArmedSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (!mIgnoreNextSwitchEvent) {
-                    onClick_toggleAlarm(buttonView);
-                }
-                mIgnoreNextSwitchEvent = false;
-            }
-        });
-
-        mTimeZoneSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                mLocalAlarm.setUtcOffset(getIntegerFromTimeZoneSpinner(position));
-                if (!mIgnoreNextSpinnerEvent && mRemoteAlarm.getAlarmArmed()) {
-                    saveAndSendAlarm();
-                }
-                mIgnoreNextSpinnerEvent = false;
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-
-        // populate the TZ spinner
-        ArrayList<String> TZ1 = new ArrayList<String>();
-        // if we have system TZ info use it, otherwise, take a default array
-        //if( TZ.length > 0 ) {
-        if (false) { // for now make this false, because the timezones are confusing when shifted by DST
-            String[] TZ = TimeZone.getAvailableIDs();
-            for (int i = 0; i < TZ.length; i++) {
-                TimeZone tz = TimeZone.getTimeZone(TZ[i]);
-                String display = new DecimalFormat("+00;-00").format(tz.getRawOffset() / 3600000) + " " + tz.getDisplayName();
-                if (!TZ1.contains(display)) {
-                    TZ1.add(display);
-                }
-            }
-            Collections.sort(TZ1, Collections.reverseOrder());
-            // find the first -01 netry
-            int lastIndex = -1;
-            for (int k = 0; k < TZ1.size(); ++k) {
-                if (TZ1.get(k).startsWith("-01")) {
-                    lastIndex = k;
-                }
-            }
-            lastIndex += 1;
-            if (lastIndex <= TZ1.size()) {
-                // Then grab the negative chunk, reverse it, and prepend it
-                Collections.sort(TZ1.subList(lastIndex, TZ1.size()));
-            }
-        } else {
-            // use the default array
-            TZ1 = new ArrayList<>(Arrays.asList(getActivity().getResources().getStringArray(R.array.simple_timezone_list)));
-        }
-        ArrayAdapter<String> tzAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, TZ1);
-        mIgnoreNextSpinnerEvent = true;
-        mTimeZoneSpinner.setAdapter(tzAdapter);
-        ((Button) v.findViewById(R.id.btn_takeTimeZone)).setOnClickListener(this);
-
+        mSaveAlarmButton = (Button) v.findViewById(R.id.btn_saveAlarmSetting);
+        mSaveAlarmButton.setOnClickListener(this);
         updateUiFromAlarms();
         return v;
     }
-
 
     @Override
     public void onActivityCreated(Bundle bundle) {
@@ -192,15 +116,6 @@ public class AlarmFragment extends Fragment implements
         storePrefs();
     }
 
-    private void storePrefs() {
-        // save the users preferences
-        SharedPreferences.Editor prefsEdit = getActivity().getPreferences(Context.MODE_PRIVATE).edit();
-        prefsEdit.putInt(PREF_ALARM_TIME_HOUR, mTimePicker.getCurrentHour());
-        prefsEdit.putInt(PREF_ALARM_TIME_MINUTE, mTimePicker.getCurrentMinute());
-        prefsEdit.putInt(PREF_ALARM_TIMEZONE, mTimeZoneSpinner.getSelectedItemPosition());
-        prefsEdit.commit();
-    }
-
     @Override
     public void onDetach() {
         super.onDetach();
@@ -211,63 +126,26 @@ public class AlarmFragment extends Fragment implements
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_takeTimeZone:
-                takeDefaultTimeZone();
+            case R.id.btn_saveAlarmSetting:
+                onClick_saveAlarm(v);
                 break;
         }
     }
 
-
-    private void takeDefaultTimeZone() {
-        spinnerSetSelectionChecked(mTimeZoneSpinner, findIntegerInTimeZoneSpinner(getDefaultTimeZone()));
-    }
-
-    private int getDefaultTimeZone() {
-        TimeZone tz = TimeZone.getDefault();
-        final int combinedOffset = tz.getRawOffset() / 3600000 + (tz.inDaylightTime(new Date()) ? 1 : 0);
-        return combinedOffset;
-    }
-
-    private void spinnerSetSelectionChecked(Spinner spin, int index) {
-        spinnerSetSelectionChecked(spin, index, false);
-    }
-
-    private void spinnerSetSelectionChecked(Spinner spin, int index, boolean animate) {
-        final int count = spin.getAdapter().getCount();
-        if ((count > 0) && (index < count)) {
-            spin.setSelection(index, animate);
-        } else { // do nothing
-        }
+    private void storePrefs() {
+        // save the users preferences
+        SharedPreferences.Editor prefsEdit = getActivity().getPreferences(Context.MODE_PRIVATE).edit();
+        prefsEdit.putInt(WiBeanSparkState.PREF_KEY_ALARM_TIME_HOUR, mTimePicker.getCurrentHour());
+        prefsEdit.putInt(WiBeanSparkState.PREF_KEY_ALARM_TIME_MINUTE, mTimePicker.getCurrentMinute());
+        prefsEdit.commit();
     }
 
     private void updateUiFromAlarms() {
-        // if we don't have UI yet die
-        if (!this.isResumed()) {
-            return;
-        }
-        // if the alarm is armed AND local pref matches the remote alarm, use that ID as it will
-        // have the real zone they picked and not just the closest equivalent
-        SharedPreferences prefs = getActivity().getPreferences(Context.MODE_PRIVATE);
-        mIgnoreNextSpinnerEvent = true;
-        if (!mRemoteAlarm.getAlarmArmed() ||
-                (mLocalAlarm.getUtcOffset() == getIntegerFromTimeZoneSpinner(prefs.getInt(PREF_ALARM_TIMEZONE, getDefaultTimeZone())))) {
-            spinnerSetSelectionChecked(mTimeZoneSpinner, prefs.getInt(PREF_ALARM_TIMEZONE, getDefaultTimeZone()));
-        } else {
-            spinnerSetSelectionChecked(mTimeZoneSpinner, findIntegerInTimeZoneSpinner(mLocalAlarm.getUtcOffset()));
-        }
         setAlarmTime(mLocalAlarm.getOnTimeAsMinutesAfterMidnight());
-
-        if (mRemoteAlarm.getAlarmArmed() != mArmedSwitch.isChecked()) {
-            mIgnoreNextSwitchEvent = true;
-            mArmedSwitch.setChecked(mRemoteAlarm.getAlarmArmed());
-        }
+        mArmedSwitch.setChecked(mRemoteAlarm.getAlarmArmed());
     }
 
-    private void onClick_toggleAlarm(View v) {
-        // die on programmatic calls to the switch
-        if (!this.isResumed()) {
-            return;
-        }
+    private void onClick_saveAlarm(View v) {
         if (mArmedSwitch.isChecked()) {
             int minutesAfterMidnight = mTimePicker.getCurrentHour() * 60 + mTimePicker.getCurrentMinute();
             mLocalAlarm.setOnTimeAsMinutesAfterMidnight(minutesAfterMidnight);
@@ -275,22 +153,13 @@ public class AlarmFragment extends Fragment implements
             // set the alarm to 2 minutes more than minutes in a day, then it is deactivated.
             mLocalAlarm.setOnTimeAsMinutesAfterMidnight(WiBeanSparkState.WiBeanAlarmPackV1.MINUTES_IN_DAY + 2);
         }
-        mLocalAlarm.setUtcOffset(getIntegerFromTimeZoneSpinner(mTimeZoneSpinner.getSelectedItemPosition()));
-        saveAndSendAlarm();
-    }
-
-    private void saveAndSendAlarm() {
-        // die if the UI isn't constructed
-        if (!this.isResumed()) {
-            return;
-        }
+        SharedPreferences prefs = getActivity().getPreferences(Context.MODE_PRIVATE);
+        mLocalAlarm.setUtcOffset(prefs.getInt(WiBeanSparkState.PREF_KEY_DEVICE_TIMEZONE, 0));
         // save the users preferences
         SharedPreferences.Editor prefsEdit = getActivity().getPreferences(Context.MODE_PRIVATE).edit();
-        prefsEdit.putInt(PREF_ALARM_TIME_HOUR, mTimePicker.getCurrentHour());
-        prefsEdit.putInt(PREF_ALARM_TIME_MINUTE, mTimePicker.getCurrentMinute());
-        prefsEdit.putInt(PREF_ALARM_TIMEZONE, mTimeZoneSpinner.getSelectedItemPosition());
+        prefsEdit.putInt(WiBeanSparkState.PREF_KEY_ALARM_TIME_HOUR, mTimePicker.getCurrentHour());
+        prefsEdit.putInt(WiBeanSparkState.PREF_KEY_ALARM_TIME_MINUTE, mTimePicker.getCurrentMinute());
         prefsEdit.commit();
-        // send
         mListener.sendAlarmRequest(mLocalAlarm);
     }
 
@@ -308,60 +177,17 @@ public class AlarmFragment extends Fragment implements
     /**
      * UTILITIES
      */
-    private int getIntegerFromTimeZoneSpinner(int position) {
-        if (mTimeZoneSpinner == null) {
-            return 0;
-        }
-        try {
-            String text = ((String) mTimeZoneSpinner.getItemAtPosition(position)).substring(0, 3);
-            return getIntegerFromTimeZoneString(text);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
-
-    private int getIntegerFromTimeZoneString(String text) {
-        text = text.substring((text.charAt(0) == '+') ? 1 : 0, 3);
-        return Integer.valueOf(text);
-    }
-
-    private int findIntegerInTimeZoneSpinner(int utcOffset) {
-        if (mTimeZoneSpinner == null) {
-            return 0;
-        }
-        Integer bigI = Integer.valueOf(utcOffset);
-        // start at the offset, because we have at least one per offset
-        int k = utcOffset;
-        try {
-            while (true) {
-                String text = ((String) mTimeZoneSpinner.getItemAtPosition(k)).substring(0, 3);
-                text = text.substring((text.charAt(0) == '+') ? 1 : 0, 3);
-                if (Integer.valueOf(text).equals(bigI)) {
-                    return k;
-                }
-                ++k;
-            }
-        } catch (Exception e) {
-            // none found
-            return -1;
-        }
-    }
-
     public void updateRemoteAlarm(final WiBeanSparkState.WiBeanAlarmPackV1 newAlarm) {
         // if the remote alarm was changed, update the UI to reflect its current state
-        boolean same = newAlarm.equals(mRemoteAlarm);
-        mRemoteAlarm = newAlarm;
+        final boolean same = newAlarm.equals(mRemoteAlarm);
         if (!same) {
-            mLocalAlarm = newAlarm;
+            mRemoteAlarm = new WiBeanSparkState.WiBeanAlarmPackV1(newAlarm);
+            mLocalAlarm = new WiBeanSparkState.WiBeanAlarmPackV1(newAlarm);
             updateUiFromAlarms();
         }
     }
 
     public interface WiBeanAlarmFragmentInteractionListener {
-        /* **
-         * The YUN interface currently doesn't support alarms, so these don't need to do anything
-         */
         public boolean sendAlarmRequest(WiBeanSparkState.WiBeanAlarmPackV1 requestedAlarm);
     }
 

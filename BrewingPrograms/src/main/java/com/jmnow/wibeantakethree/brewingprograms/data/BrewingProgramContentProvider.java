@@ -168,7 +168,7 @@ public class BrewingProgramContentProvider extends ContentProvider {
 
     private void checkColumns(String[] projection) {
         String[] available = {
-                BrewingProgramHelper.COLUMN_ID, BrewingProgramHelper.COLUMN_ID_ALIASED,
+                BrewingProgramHelper.COLUMN_ID, BrewingProgramHelper.COLUMN_ID_ALIASED_SELECT,
 
                 BrewingProgramHelper.COLUMN_NAME, BrewingProgramHelper.COLUMN_DESCRIPTION,
                 BrewingProgramHelper.COLUMN_ON_ONE, BrewingProgramHelper.COLUMN_OFF_ONE,
@@ -177,7 +177,8 @@ public class BrewingProgramContentProvider extends ContentProvider {
                 BrewingProgramHelper.COLUMN_ON_FOUR, BrewingProgramHelper.COLUMN_OFF_FOUR,
                 BrewingProgramHelper.COLUMN_ON_FIVE, BrewingProgramHelper.COLUMN_OFF_FIVE,
                 BrewingProgramHelper.COLUMN_ORIGINAL_AUTHOR, BrewingProgramHelper.COLUMN_SHORT_URL,
-                BrewingProgramHelper.COLUMN_CREATED_AT, BrewingProgramHelper.COLUMN_MODIFIED_AT};
+                BrewingProgramHelper.COLUMN_CREATED_AT, BrewingProgramHelper.COLUMN_MODIFIED_AT,
+                BrewingProgramHelper.COLUMN_IMAGE_THUMBNAIL_NAME};
         if (projection != null) {
             HashSet<String> requestedColumns = new HashSet<String>(Arrays.asList(projection));
             HashSet<String> availableColumns = new HashSet<String>(Arrays.asList(available));

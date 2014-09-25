@@ -41,6 +41,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/tv_deviceId"
+                android:editable="false"
                 android:maxLength="128" />
         </RelativeLayout>
 
@@ -72,6 +73,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/tv_accessToken"
+                android:editable="false"
                 android:maxLength="128" />
         </RelativeLayout>
 
@@ -92,11 +94,40 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:hint="@string/hint_goal_temperature"
+                android:inputType="number"
                 android:maxLength="3"
                 android:minWidth="80sp"
                 android:singleLine="true"
                 android:text="92" />
         </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/btn_findTimezone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="@string/alarm_timezone_findButton" />
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBottom="@+id/btn_findTimezone"
+                android:layout_alignParentStart="true"
+                android:text="@string/alarm_timezone_label"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <Spinner
+                android:id="@+id/spn_dstOffset"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/btn_findTimezone" />
+
+        </RelativeLayout>
 
         <Button
             android:id="@+id/btn_testCredentials"

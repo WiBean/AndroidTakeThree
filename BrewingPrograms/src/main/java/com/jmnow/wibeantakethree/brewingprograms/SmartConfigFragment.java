@@ -262,18 +262,18 @@ public class SmartConfigFragment extends Fragment
             mPassword = mPassword_field.getText().toString().trim();
             mAesKey = mAesKey_field.getText().toString().trim();
             if ((mAesKey == null) || (mAesKey.length() != 16)) {
-                mAesKey = SmartConfigFragment.this.getActivity().getString(R.string.smartConfig_default_aes_key);
+                mAesKey = SmartConfigFragment.this.getActivity().getString(R.string.default_smartConfig_aes_key);
             }
             System.out.println("SmartConfig: ssid: " + mSsid + " pw: " + mPassword + " gateway: " + mGatewayIpAddress);
 
             // flip the button for visuals
             if (!mIsSearching) {
                 mConnectButton.setBackgroundResource(R.drawable.smartconfig_btn_selector_running);
-                mConnectButton.setText(getResources().getString(R.string.smartConfig_stop_label));
+                mConnectButton.setText(getResources().getString(R.string.label_smartConfig_stop));
                 mProgressBar.setVisibility(View.VISIBLE);
             } else {
                 mConnectButton.setBackgroundResource(R.drawable.smartconfig_btn_selector_waiting);
-                mConnectButton.setText(getResources().getString(R.string.smartConfig_start_label));
+                mConnectButton.setText(getResources().getString(R.string.label_smartConfig_start));
                 mProgressBar.setVisibility(View.INVISIBLE);
             }
         }

@@ -5,4 +5,7 @@
         <!-- Customize your theme here. -->
     </style>
 
+    <style name="ProgressDialogRedBackground" parent="android:Theme.Holo.Dialog">
+        <item name="android:windowBackground">@android:color/holo_red_dark</item>
+    </style>
 </resources>

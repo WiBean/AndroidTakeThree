@@ -7,13 +7,17 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 /**
  * Created by John-Michael on 7/10/2014.
+ * This class describes
+ * - The SQLite database which contains the brewing programs
+ * - A convenience method for seeding the database with programs
  */
 public class BrewingProgramHelper extends SQLiteOpenHelper {
 
     // DB NAME
     public static final String DATABASE_NAME = "brewing_programs";
     public static final String COLUMN_ID = "_rowid_";
-    public static final String COLUMN_ID_ALIASED = "_rowid_ AS _id";
+    public static final String COLUMN_ID_ALIASED_SELECT = "_rowid_ AS _id";
+    public static final String COLUMN_ID_ALIASED = "_id";
     public static final String COLUMN_NAME = "name";
     public static final String COLUMN_DESCRIPTION = "description";
     public static final String COLUMN_ON_ONE = "on_one";
@@ -30,9 +34,21 @@ public class BrewingProgramHelper extends SQLiteOpenHelper {
     public static final String COLUMN_SHORT_URL = "short_url";
     public static final String COLUMN_CREATED_AT = "created_at";
     public static final String COLUMN_MODIFIED_AT = "modified_at";
-
+    public static final String[] PROJECTION_DATA_COLUMNS_WITH_ID = {
+            COLUMN_ID_ALIASED_SELECT,
+            COLUMN_NAME,
+            COLUMN_DESCRIPTION,
+            COLUMN_ON_ONE, COLUMN_OFF_ONE,
+            COLUMN_ON_TWO, COLUMN_OFF_TWO,
+            COLUMN_ON_THREE, COLUMN_OFF_THREE,
+            COLUMN_ON_FOUR, COLUMN_OFF_FOUR,
+            COLUMN_ON_FIVE, COLUMN_OFF_FIVE,
+            COLUMN_SHORT_URL,
+            COLUMN_CREATED_AT, COLUMN_MODIFIED_AT
+    };
+    public static final String COLUMN_IMAGE_THUMBNAIL_NAME = "image_thumbnail_name";
     // DB Version
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     public BrewingProgramHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -59,7 +75,8 @@ public class BrewingProgramHelper extends SQLiteOpenHelper {
                 COLUMN_ORIGINAL_AUTHOR + " TEXT DEFAULT \"\", " +
                 COLUMN_SHORT_URL + " TEXT DEFAULT \"\", " +
                 COLUMN_CREATED_AT + " TEXT DEFAULT current_timestamp, " +
-                COLUMN_MODIFIED_AT + " TEXT DEFAULT current_timestamp ) ";
+                COLUMN_MODIFIED_AT + " TEXT DEFAULT current_timestamp, " +
+                COLUMN_IMAGE_THUMBNAIL_NAME + " TEXT DEFAULT \"basic_espresso\" ) ";
 
 
         // create brewing programs table
@@ -75,7 +92,6 @@ public class BrewingProgramHelper extends SQLiteOpenHelper {
         // simple upgrade script which destroys old schema and initializes
         // new schema.
         // TODO: Make non-destructive upgrade script.
-
         // drop old if exists
         db.execSQL("DROP TABLE IF EXISTS " + DATABASE_NAME);
         // create the new version

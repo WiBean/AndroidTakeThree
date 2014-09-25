@@ -8,6 +8,7 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.json.JSONObject;
@@ -21,8 +22,8 @@ import java.util.List;
 
 public class BrewingProgram {
     public static final Integer NUMONOFFTIMES = 5;
-    private Integer[] onTimes = new Integer[NUMONOFFTIMES];
-    private Integer[] offTimes = new Integer[NUMONOFFTIMES];
+    private Integer[] mOnTimes = new Integer[NUMONOFFTIMES];
+    private Integer[] mOffTimes = new Integer[NUMONOFFTIMES];
     public static final Integer MIN_TIME_UNITS = 0;
     public static final Integer MAX_TIME_UNITS = 100;
     public static final String GOOGLE_SHORTEN_URL = "https://www.googleapis.com/urlshortener/v1/url";
@@ -40,22 +41,54 @@ public class BrewingProgram {
     // CALCULATED FIELDS
     private long mTotalDurationInMilliseconds = 0;
 
+    /**
+     * Constructor
+     *
+     * @param id
+     * @param name
+     */
     public BrewingProgram(CharSequence id, CharSequence name) {
-        this.mId = id.toString();
-        this.mName = name.toString();
-        this.mDescription = "";
+        zeroFields();
+        setId(id.toString());
+        setName(name.toString());
+        setDescription("");
         for (Integer k = 0; k < NUMONOFFTIMES; ++k) {
-            onTimes[k] = 0;
-            offTimes[k] = 0;
+            mOnTimes[k] = 0;
+            mOffTimes[k] = 0;
         }
     }
 
+    /**
+     * Constructor
+     * @param id
+     * @param name
+     * @param description
+     * @param onTimes
+     * @param offTimes
+     */
     public BrewingProgram(CharSequence id, CharSequence name, CharSequence description, Integer[] onTimes, Integer[] offTimes) {
-        this.mId = id.toString();
-        this.mName = name.toString();
-        this.mDescription = description.toString();
-        this.onTimes = onTimes;
-        this.offTimes = offTimes;
+        zeroFields();
+        setId(id.toString());
+        setName(name.toString());
+        setDescription(description.toString());
+        setOnTimes(onTimes);
+        setOffTimes(offTimes);
+        calculateFields();
+    }
+
+    /**
+     * Copy constructor.
+     */
+    public BrewingProgram(BrewingProgram copyFrom) {
+        zeroFields();
+        mId = new String(copyFrom.mId);
+        mName = new String(copyFrom.mName);
+        mDescription = new String(copyFrom.mDescription);
+        mOnTimes = copyFrom.mOnTimes.clone();
+        mOffTimes = copyFrom.mOffTimes.clone();
+        mCreatedAt = new String(copyFrom.mCreatedAt);
+        mModifiedAt = new String(copyFrom.mModifiedAt);
+        mShortUrl = new String(copyFrom.mShortUrl);
         calculateFields();
     }
 
@@ -74,54 +107,91 @@ public class BrewingProgram {
         return newGuy;
     }
 
-    public String getCreatedAt() {
+    private void zeroFields() {
+        for (int k = 0; k < NUMONOFFTIMES; ++k) {
+            mOnTimes[k] = 0;
+            mOffTimes[k] = 0;
+        }
+    }
+
+    /**
+     * Equality overrides
+     */
+    public boolean equals(BrewingProgram another) {
+        return (another instanceof BrewingProgram)
+                && mId.equals(another.mId)
+                && mName.equals(another.mName)
+                && mDescription.equals(another.mDescription)
+                && mOnTimes.equals(another.mOnTimes)
+                && mOffTimes.equals(another.mOffTimes)
+                && mCreatedAt.equals(another.mCreatedAt)
+                && mModifiedAt.equals(another.mModifiedAt)
+                && mShortUrl.equals(another.mShortUrl);
+    }
+
+    public int hashCode() {
+        // you pick a hard-coded, randomly chosen, non-zero, odd number
+        // ideally different for each class
+        return new HashCodeBuilder(17, 37).
+                append(mId).
+                append(mName).
+                append(mDescription).
+                append(mOnTimes).
+                append(mOffTimes).
+                append(mCreatedAt).
+                append(mModifiedAt).
+                append(mShortUrl).
+                toHashCode();
+    }
+
+    public final String getCreatedAt() {
         return mCreatedAt;
     }
 
     public void setCreatedAt(String createdAt) {
-        this.mCreatedAt = createdAt;
+        mCreatedAt = new String(createdAt);
     }
 
-    public String getModifiedAt() {
+    public final String getModifiedAt() {
         return mModifiedAt;
     }
 
     public void setModifiedAt(String modifiedAt) {
-        this.mModifiedAt = modifiedAt;
+        mModifiedAt = new String(modifiedAt);
     }
 
-    public String getId() {
-        return this.mId;
+    public final String getId() {
+        return mId;
     }
 
-    public String getName() {
-        return this.mName;
+    public final String getName() {
+        return mName;
     }
 
-    public String getDescription() {
-        return this.mDescription;
+    public final String getDescription() {
+        return mDescription;
     }
 
-    public Integer[] getOnTimes() {
-        return this.onTimes;
+    public final Integer[] getOnTimes() {
+        return mOnTimes;
     }
 
-    public Integer[] getOffTimes() {
-        return this.offTimes;
+    public final Integer[] getOffTimes() {
+        return mOffTimes;
     }
 
     public boolean setId(String id) {
-        this.mId = id;
+        mId = new String(id);
         return true;
     }
 
     public boolean setName(CharSequence name) {
-        this.mName = name.toString();
+        mName = new String(name.toString());
         return true;
     }
 
     public boolean setDescription(CharSequence description) {
-        this.mDescription = description.toString();
+        mDescription = new String(description.toString());
         return true;
     }
 
@@ -140,7 +210,7 @@ public class BrewingProgram {
         for (; k < BrewingProgram.NUMONOFFTIMES; k++) {
             onTimes[k] = 0;
         }
-        this.onTimes = onTimes;
+        mOnTimes = onTimes.clone();
         calculateFields();
         return true;
     }
@@ -160,17 +230,17 @@ public class BrewingProgram {
         for (; k < BrewingProgram.NUMONOFFTIMES; k++) {
             offTimes[k] = 0;
         }
-        this.offTimes = offTimes;
+        mOffTimes = offTimes.clone();
         calculateFields();
         return true;
     }
 
-    public String getShortUrl() {
+    public final String getShortUrl() {
         return mShortUrl;
     }
 
     public void setShortUrl(String shortUrl) {
-        this.mShortUrl = shortUrl;
+        mShortUrl = new String(shortUrl);
     }
 
     public boolean shortenUrl() {
@@ -188,7 +258,7 @@ public class BrewingProgram {
             if ((response.code() == 200) &&
                     bodyAsObject.has("kind") &&
                     bodyAsObject.getString("kind").startsWith("urlshortener#url")) {
-                this.setShortUrl(bodyAsObject.getString("id"));
+                setShortUrl(bodyAsObject.getString("id"));
                 return true;
             }
             // if we get here, something was wrong
@@ -215,8 +285,8 @@ public class BrewingProgram {
         queryString.append("modified_at=").append(mModifiedAt).append("&");
         queryString.append("created_at=").append(mCreatedAt).append("&");
         for (int k = 0; k < NUMONOFFTIMES; ++k) {
-            queryString.append("onF[").append(k).append("]=").append(onTimes[k]).append("&");
-            queryString.append("offF[").append(k).append("]=").append(offTimes[k]).append("&");
+            queryString.append("onF[").append(k).append("]=").append(mOnTimes[k]).append("&");
+            queryString.append("offF[").append(k).append("]=").append(mOffTimes[k]).append("&");
         }
         try {
             return new URI("http", "www.wibean.com", "/brewingProgram/v1", queryString.toString(), null);
@@ -229,8 +299,8 @@ public class BrewingProgram {
     public URI toSparkUri(String deviceId, String accessToken) {
         StringBuilder queryString = new StringBuilder();
         for (int k = 0; k < NUMONOFFTIMES; ++k) {
-            queryString.append("onF[").append(k).append("]=").append(onTimes[k]).append("&");
-            queryString.append("offF[").append(k).append("]=").append(offTimes[k]).append("&");
+            queryString.append("onF[").append(k).append("]=").append(mOnTimes[k]).append("&");
+            queryString.append("offF[").append(k).append("]=").append(mOffTimes[k]).append("&");
         }
         try {
             return new URI("http", "www.wibean.com", "/brewingProgram/v1", queryString.toString(), null);
@@ -244,13 +314,13 @@ public class BrewingProgram {
         final String name = thePair.getName();
         switch (name) {
             case "name":
-                this.setName(thePair.getValue());
+                setName(thePair.getValue());
                 break;
             case "description":
-                this.setDescription(thePair.getValue());
+                setDescription(thePair.getValue());
                 break;
             case "created_at":
-                this.setCreatedAt(thePair.getValue());
+                setCreatedAt(thePair.getValue());
                 break;
             default:
                 // this version of the program only supports max 5 times, so multi-digit indecies are bad
@@ -263,7 +333,7 @@ public class BrewingProgram {
                     if ((value < MIN_TIME_UNITS) || (value > MAX_TIME_UNITS)) {
                         break;
                     }
-                    onTimes[index] = value;
+                    mOnTimes[index] = value;
                 } else if (name.startsWith("offF[") && (name.length() == 7)) {
                     Integer index = Integer.valueOf(name.substring(5, 6));
                     if ((index > NUMONOFFTIMES) || (index < 0)) {
@@ -273,7 +343,7 @@ public class BrewingProgram {
                     if ((value < MIN_TIME_UNITS) || (value > MAX_TIME_UNITS)) {
                         break;
                     }
-                    offTimes[index] = value;
+                    mOffTimes[index] = value;
                 }
         }
 
@@ -281,10 +351,10 @@ public class BrewingProgram {
 
     private void calculateFields() {
         long totalTimeInMilliseconds = 0;
-        for (int time : onTimes) {
+        for (int time : mOnTimes) {
             totalTimeInMilliseconds += time;
         }
-        for (int time : offTimes) {
+        for (int time : mOffTimes) {
             totalTimeInMilliseconds += time;
         }
         mTotalDurationInMilliseconds = totalTimeInMilliseconds * 100; // each tick is 100ms

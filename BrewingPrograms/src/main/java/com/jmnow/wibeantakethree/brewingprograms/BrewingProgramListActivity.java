@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.LoaderManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
@@ -12,9 +13,12 @@ import android.app.TaskStackBuilder;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.Loader;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -38,8 +42,6 @@ import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramContentProvi
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramHelper;
 import com.jmnow.wibeantakethree.brewingprograms.wibean.WiBeanSparkState;
 import com.squareup.okhttp.OkHttpClient;
-
-import org.apache.http.HttpStatus;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -84,6 +86,7 @@ public class BrewingProgramListActivity extends Activity
      */
     private static final int NOTIFICATION_HOT = 100;
     private static final String PROPERTY_ID = "UA-42606656-1";
+    private static final int PROGRAM_DETAIL_LOADER = 1;
     // and a related listener to use when we can to cancel a brew in progress
     final DialogInterface.OnCancelListener sBrewCanceler = new DialogInterface.OnCancelListener() {
         @Override
@@ -114,6 +117,8 @@ public class BrewingProgramListActivity extends Activity
     private ProgressDialog mDefiniteProgress;
     // keep track of our status label  (assigned in onViewCreated)
     private TextView mStatusBarStateText;
+    private TextView mAlarmTimeText;
+    private TextView mMachineTimeText;
     // handles the state and communication with the WiBean
     private WiBeanSparkState mWibean = new WiBeanSparkState();
     // this variable is used to allow fragments to point at a control which we will fill when
@@ -132,6 +137,8 @@ public class BrewingProgramListActivity extends Activity
     private float mGoalTemperature = 92;
     // keep track of foreground/background state and stop the polling loop
     private boolean mPausePolling = false;
+    private boolean mFollowupStatus = false;
+    // END GOOGLE ANALYTICS TRACKING METHODS AND RESOURCES
 
     synchronized Tracker getTracker(TrackerName trackerId) {
         if (!mTrackers.containsKey(trackerId)) {
@@ -143,7 +150,6 @@ public class BrewingProgramListActivity extends Activity
         }
         return mTrackers.get(trackerId);
     }
-    // END GOOGLE ANALYTICS TRACKING METHODS AND RESOURCES
 
     //*******************
     //* LIFECYCLE METHODS
@@ -163,6 +169,8 @@ public class BrewingProgramListActivity extends Activity
         // hook up convenience members
         mStatusBarStateText = (TextView) findViewById(R.id.tv_inControlLabel);
         mIndefiniteProgressLow = (ProgressBar) findViewById(R.id.pb_indeterminateLow);
+        mAlarmTimeText = (TextView) findViewById(R.id.tv_alarmSetFor);
+        mMachineTimeText = (TextView) findViewById(R.id.tv_deviceTime);
 
         if (findViewById(R.id.brewingprogram_detail_container) != null) {
             // The detail container view will be present only in the
@@ -199,10 +207,9 @@ public class BrewingProgramListActivity extends Activity
         if (!mNavigationDrawerFragment.isDrawerOpen()) {
             restoreActionBar();
         }
-
         try {
             MenuItem item = menu.findItem(R.id.menu_toggle_heating);
-            if (mWibean.isHeating()) {
+            if (mWibean.isHeatingLocal()) {
                 item.setTitle(R.string.action_toggle_heating_off);
             } else {
                 item.setTitle(R.string.action_toggle_heating_on);
@@ -254,9 +261,9 @@ public class BrewingProgramListActivity extends Activity
 
     @Override
     public void onResume() {
-        super.onPause();
+        super.onResume();
         mPausePolling = false;
-        temperaturePollLoop();
+        statusPollLoop();
     }
 
     // returns true if action taken
@@ -295,21 +302,6 @@ public class BrewingProgramListActivity extends Activity
         actionBar.setDisplayShowTitleEnabled(true);
     }
 
-    public boolean refreshPrefs() {
-        SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
-        String deviceId = prefs.getString(WiBeanSparkState.PREF_KEY_DEVICE_ID, "");
-        String accessToken = prefs.getString(WiBeanSparkState.PREF_KEY_ACCESS_TOKEN, "");
-        mGoalTemperature = Float.valueOf(prefs.getString(WiBeanSparkState.PREF_KEY_BREW_TEMP, "92"));
-        if (deviceId.isEmpty() || accessToken.isEmpty()) {
-            return false;
-        }
-        boolean success = true;
-        success &= mWibean.setSparkDeviceId(deviceId);
-        success &= mWibean.setSparkAccessToken(accessToken);
-
-        return success;
-    }
-
     //*************
     //* INTERFACES
     //*************
@@ -317,6 +309,23 @@ public class BrewingProgramListActivity extends Activity
     /**
      * INTERFACE FOR testCredentials fragment
      */
+
+    public boolean refreshPrefs() {
+        SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+        String deviceId = prefs.getString(WiBeanSparkState.PREF_KEY_DEVICE_ID, "");
+        String accessToken = prefs.getString(WiBeanSparkState.PREF_KEY_ACCESS_TOKEN, "");
+        mGoalTemperature = Float.valueOf(prefs.getString(WiBeanSparkState.PREF_KEY_BREW_TEMP, "92"));
+        final int utcOffset = prefs.getInt(WiBeanSparkState.PREF_KEY_DEVICE_TIMEZONE, 0);
+        if (deviceId.isEmpty() || accessToken.isEmpty()) {
+            return false;
+        }
+        boolean success = true;
+        success &= mWibean.setSparkDeviceId(deviceId);
+        success &= mWibean.setSparkAccessToken(accessToken);
+        success &= updateTimeZone(utcOffset);
+        success &= mWibean.setTemperature(mGoalTemperature);
+        return success;
+    }
 
     /**
      * Allows fragment to request alert dialogues which the host activity can appropriately
@@ -337,27 +346,14 @@ public class BrewingProgramListActivity extends Activity
         dialog.show();
     }
 
-
     public void setTargetControl(@IdRes int controlId) {
         mRequestedViewId = controlId;
     }
 
     public void toggleHeating() {
-        if (mWibean.isHeating()) {
-            try {
-                AsyncTask<Void, Integer, Boolean> task = new MakeHibernateTask().execute();
-            } catch (Exception e) {
-                System.out.println("toggleHeating was interrupted: " + e.getLocalizedMessage());
-            }
-        } else {
-            try {
-                AsyncTask<Integer, Integer, Boolean> task = new MakeHeatTask().execute();
-                // since they are turning on the heat, notify the user
-                mNotifyWhenHot = true;
-            } catch (Exception e) {
-                System.out.println("MakeHeat was interrupted: " + e.getLocalizedMessage());
-            }
-        }
+        mWibean.setHeating(!mWibean.isHeatingLocal());
+        invalidateOptionsMenu();
+        statusPollLoop();
     }
 
     /**
@@ -385,21 +381,23 @@ public class BrewingProgramListActivity extends Activity
 
     public void makeBusyWithProgress(final CharSequence title, final CharSequence message) {
         if (mDefiniteProgress == null) {
-            mDefiniteProgress = new ProgressDialog(BrewingProgramListActivity.this, ProgressDialog.STYLE_HORIZONTAL);
+            mDefiniteProgress = new ProgressDialog(BrewingProgramListActivity.this, R.style.ProgressDialogRedBackground);
+            mDefiniteProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            mDefiniteProgress.setMax(100);
+            mDefiniteProgress.setCancelable(true);
+            mDefiniteProgress.setOnCancelListener(sBrewCanceler);
+            //mDefiniteProgress.getWindow().setBackgroundDrawableResource(android.R.color.holo_red_dark);
         }
-        mDefiniteProgress.setProgressStyle(mDefiniteProgress.STYLE_HORIZONTAL);
         mDefiniteProgress.setTitle(title);
         mDefiniteProgress.setMessage(message);
         mDefiniteProgress.setProgress(0);
-        mDefiniteProgress.setMax(100);
-        mDefiniteProgress.setCancelable(true);
-        mDefiniteProgress.setOnCancelListener(sBrewCanceler);
         mDefiniteProgress.show();
     }
 
     public void updateBusyProgress(int value) {
         if (mDefiniteProgress != null) {
             mDefiniteProgress.setProgress(value);
+            mDefiniteProgress.show();
         }
     }
 
@@ -414,13 +412,18 @@ public class BrewingProgramListActivity extends Activity
         mIndefiniteProgressLow.setVisibility(mIndefiniteProgressLow.GONE);
     }
 
-    public void temperaturePollLoop() {
+    public void statusPollLoop() {
         // only allow one poll at a time
         if (!mPausePolling && mTempLoopMutex.tryAcquire()) {
             // make the request
-            AsyncTask<Void, Integer, Integer> task = new QueryStatusTask().execute();
+            AsyncTask<Void, Boolean, WiBeanSparkState.CONNECTION_STATE> task = new QueryStatusTask().execute();
+        } else {
+            mFollowupStatus = true;
         }
     }
+    // ********************
+    // INTERFACES
+    // ********************
 
     public boolean insertOrUpdateBrewingProgram(BrewingProgram theProgram) {
         // Defines an object to contain the updated values
@@ -475,9 +478,6 @@ public class BrewingProgramListActivity extends Activity
             return (rowsUpdated > 0);
         }
     }
-    // ********************
-    // INTERFACES
-    // ********************
 
     /**
      * INTERFACE FOR NavigationDrawer fragment
@@ -560,6 +560,11 @@ public class BrewingProgramListActivity extends Activity
         notificationManager.notify(NOTIFICATION_HOT, nb.build());
     }
 
+
+    /**
+     * UTILITY
+     */
+
     /**
      * INTERFACE FOR BrewingProgramListFragment
      * takes action when the user clicks an item
@@ -576,20 +581,41 @@ public class BrewingProgramListActivity extends Activity
                 .commit();
     }
 
+    /**
+     * Turns the input into a human readable 24-hour style clock string HH:MM
+     *
+     * @param minutesAfterMidnight
+     * @return
+     */
+    String minutesAfterMidnightToString(int minutesAfterMidnight) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(minutesAfterMidnight / 60);
+        builder.append(":");
+        builder.append(String.format("%02d", minutesAfterMidnight % 60));
+        return builder.toString();
+    }
+
+    /**
+     * Set the appropriate status text when connecting or updating
+     */
+    public void setUpdatingStatusText() {
+        if (mWibean.getConnectionState() == WiBeanSparkState.CONNECTION_STATE.CONNECTED) {
+            mStatusBarStateText.setText(R.string.heading_control_status_updating);
+        } else {
+            mStatusBarStateText.setText(R.string.label_control_status_connecting);
+        }
+    }
 
     /**
      * INTERFACE FOR AlarmFragment
      * tries communication when user sets alarm
      */
     public boolean sendAlarmRequest(WiBeanSparkState.WiBeanAlarmPackV1 requestedAlarm) {
-        Boolean success = false;
-        try {
-            AsyncTask<WiBeanSparkState.WiBeanAlarmPackV1, Integer, Boolean> task = new ToggleAlarmTask().execute(requestedAlarm);
-        } catch (Exception e) {
-            System.out.println("sendAlarmRequest was interrupted: " + e.getLocalizedMessage());
-            success = false;
+        if (mWibean.setAlarm(requestedAlarm)) {
+            statusPollLoop();
+            return true;
         }
-        return success;
+        return false;
     }
 
     /**
@@ -597,7 +623,6 @@ public class BrewingProgramListActivity extends Activity
      * when the user wants to brew!
      */
     public void brewProgram(BrewingProgram theProgram) {
-
         Boolean success = false;
         try {
             mBrewingTask = new BrewProgramTask().execute(theProgram);
@@ -607,8 +632,100 @@ public class BrewingProgramListActivity extends Activity
         }
     }
 
+    public void buildProgramFromId(final long id, final BrewingProgramAcceptor acceptor) {
+        getLoaderManager().restartLoader(PROGRAM_DETAIL_LOADER, null, new LoaderManager.LoaderCallbacks<Cursor>() {
+            @Override
+            public Loader<Cursor> onCreateLoader(int loaderID, Bundle bundle) {
+                return new CursorLoader(
+                        mContext,   // Parent activity context
+                        ContentUris.withAppendedId(BrewingProgramContentProvider.CONTENT_URI, id),// Table to query
+                        BrewingProgramHelper.PROJECTION_DATA_COLUMNS_WITH_ID,           // null, return every column
+                        null,            // No selection clause because the URI handles it!!!
+                        null,            // No selection arguments
+                        null             // Default sort order
+                );
+            }
+
+            @Override
+            public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+                /**
+                 * Move the results into the view
+                 */
+                if (cursor.getCount() <= 0) {
+                    return;
+                }
+                cursor.moveToFirst();
+                try {
+                    int k = 0;
+                    String idAsString = String.valueOf(cursor.getLong(k++));
+                    String name = cursor.getString(k++);
+                    BrewingProgram bp = new BrewingProgram(idAsString, name);
+                    bp.setDescription(cursor.getString(k++));
+                    Integer[] onTimes = new Integer[5];
+                    Integer[] offTimes = new Integer[5];
+                    onTimes[0] = cursor.getInt((k++));
+                    offTimes[0] = cursor.getInt((k++));
+                    onTimes[1] = cursor.getInt((k++));
+                    offTimes[1] = cursor.getInt((k++));
+                    onTimes[2] = cursor.getInt((k++));
+                    offTimes[2] = cursor.getInt((k++));
+                    onTimes[3] = cursor.getInt((k++));
+                    offTimes[3] = cursor.getInt((k++));
+                    onTimes[4] = cursor.getInt((k++));
+                    offTimes[4] = cursor.getInt((k++));
+                    bp.setOnTimes(onTimes);
+                    bp.setOffTimes(offTimes);
+                    bp.setShortUrl(cursor.getString(k++));
+                    bp.setCreatedAt(cursor.getString(k++));
+                    bp.setModifiedAt(cursor.getString(k++));
+                    if (acceptor != null) {
+                        acceptor.useBrewingProgram(bp);
+                    }
+                } catch (Exception e) {
+                    System.out.println("CURSOR ERROR: " + e.getLocalizedMessage());
+                }
+                // it has done its job - terminate
+                getLoaderManager().destroyLoader(PROGRAM_DETAIL_LOADER);
+            }
+
+            @Override
+            public void onLoaderReset(Loader<Cursor> loader) {
+            }
+        });
+    }
+
+    /**
+     * Allow the user to brew a program simply by ID as well
+     *
+     * @param programId
+     */
+    public void brewProgram(long programId) {
+        buildProgramFromId(programId, new BrewingProgramAcceptor() {
+            @Override
+            public void useBrewingProgram(BrewingProgram bp) {
+                brewProgram(bp);
+            }
+        });
+    };
+
     public boolean saveOrCreateItem(BrewingProgram aProgram) {
         return insertOrUpdateBrewingProgram(aProgram);
+    }
+
+    /**
+     * INTERFACE FOR TakeControlFragment
+     */
+    public boolean updateTimeZone(int newOffset) {
+        WiBeanSparkState.WiBeanAlarmPackV1 pack = mWibean.getAlarm();
+        if (pack.getUtcOffset() != newOffset) {
+            if (pack.setUtcOffset(newOffset) && mWibean.setAlarm(pack)) {
+                statusPollLoop();
+                return true;
+            }
+        } else {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -625,68 +742,18 @@ public class BrewingProgramListActivity extends Activity
     }
 
     /**
-     * ASYNC TASKS USED TO DO NETWORK AND GUI CALLS APPROPRIATELY
+     * The LOADER instance used here must be identified, whatever you want
      */
-
-    private class MakeHeatTask extends AsyncTask<Integer, Integer, Boolean> {
-        protected Boolean doInBackground(Integer... temps) {
-            if (temps.length > 0) {
-                return mWibean.makeHeat(temps[0]);
-            } else {
-                return mWibean.makeHeat();
-            }
-        }
-        protected void onPreExecute() {
-            makeBusy("Please wait", getString(R.string.action_activatingHeat));
-            refreshPrefs();
-        }
-        protected void onPostExecute(Boolean result) {
-            if (!result) {
-                alertUser(getString(R.string.alert_ip_error_title), getString(R.string.alert_ip_error_message));
-            } else {
-                // heat toggle text update is already handled by NavDrawerFragment, don't do it here
-                // update status text
-                mStatusBarStateText.setText(R.string.heading_control_status_heating);
-            }
-            // force a rebuild of the button text
-            invalidateOptionsMenu();
-            makeNotBusy();
-        }
-    }
-
-    private class MakeHibernateTask extends AsyncTask<Void, Integer, Boolean> {
-        protected Boolean doInBackground(Void... voids) {
-            if (mWibean.isHeating()) {
-                return mWibean.makeHibernate();
-            } else {
-                mWibean.makeHibernate(); // always send the command for safety
-                return true; //already not in-control, so report success for the user
-            }
-        }
-        protected void onPreExecute() {
-            makeBusy("Please wait", getString(R.string.action_disablingHeat));
-            refreshPrefs();
-        }
-
-        protected void onPostExecute(Boolean result) {
-            if (!result) {
-                alertUser(getString(R.string.alert_ip_error_title), getString(R.string.alert_ip_error_message));
-            } else {
-                // heat toggle text update is already handled by NavDrawerFragment, don't do it here
-                // update status text
-                mStatusBarStateText.setText(R.string.heading_control_status_cooling);
-            }
-            // force a rebuild of the button text
-            invalidateOptionsMenu();
-            makeNotBusy();
-        }
+    public interface BrewingProgramAcceptor {
+        void useBrewingProgram(BrewingProgram bp);
     }
 
     private class BrewProgramTask extends AsyncTask<BrewingProgram, Integer, Integer> {
         protected void onPreExecute() {
-            makeBusyWithProgress("Brewing!", "Generating coffee...");
+            Context c = getApplicationContext();
+            makeBusyWithProgress(c.getString(R.string.action_brewing), c.getString(R.string.action_brewing_description));
             //set the status label
-            mStatusBarStateText.setText(R.string.heading_control_status_brewing);
+            mStatusBarStateText.setText(R.string.label_control_status_brewing);
             refreshPrefs();
         }
 
@@ -758,68 +825,95 @@ public class BrewingProgramListActivity extends Activity
         }
     }
 
-    private class QueryStatusTask extends AsyncTask<Void, Integer, Integer> {
+    private class QueryStatusTask extends AsyncTask<Void, Boolean, WiBeanSparkState.CONNECTION_STATE> {
         protected void onPreExecute() {
             refreshPrefs();
-            if (!mCredentialsValid) {
+            if (!mCredentialsValid || !mWibean.isSynchronized()) {
                 makeBusy();
-                mStatusBarStateText.setText(R.string.heading_control_status_connecting);
+                setUpdatingStatusText();
             }
         }
 
-        protected Integer doInBackground(Void... voids) {
-            return mWibean.queryStatus();
+        protected WiBeanSparkState.CONNECTION_STATE doInBackground(Void... voids) {
+            if (mWibean.isSynchronized()) {
+                return mWibean.queryStatus();
+            } else {
+                mWibean.synchronizeWithRemote();
+                WiBeanSparkState.CONNECTION_STATE st = mWibean.queryStatus();
+                return st;
+            }
         }
 
-        protected void onPostExecute(Integer result) {
+        protected void onPostExecute(WiBeanSparkState.CONNECTION_STATE result) {
             try {
                 boolean tryAgain = true;
-                if (result.equals(Integer.valueOf((HttpStatus.SC_FORBIDDEN)))) {
-                    // bad credentials
-                    mCredentialsValid = false;
-                    alertUser("", "Credentials Invalid");
-                    // update Control status text
-                    mStatusBarStateText.setText(R.string.heading_control_status_bad);
-                    tryAgain = false;
-                } else if (result.equals(Integer.valueOf((HttpStatus.SC_REQUEST_TIMEOUT)))) {
-                    // update Control status text
-                    mStatusBarStateText.setText(R.string.heading_control_status_bad);
-                    // but keep polling
-                    tryAgain = true;
-                } else if (result.equals(Integer.valueOf((HttpStatus.SC_OK)))) {
-                    // if success and we just connected
-                    if ((mHandler != null) && !mCredentialsValid) {
-                        // notify user
-                        mHandler.post(() -> {
-                            Toast.makeText(BrewingProgramListActivity.this, mContext.getString(R.string.notify_wibeanConnectionSuccess), Toast.LENGTH_SHORT).show();
-                        });
-                        // and flip to the brewing programs
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                mNavigationDrawerFragment.selectItem(0);
-                            }
-                        });
-                    }
-                    mCredentialsValid = true;
-                    // update Control status text
-                    if (mWibean.isBrewing()) {
-                        mStatusBarStateText.setText(R.string.heading_control_status_brewing);
-                    } else if (mWibean.isHeating()) {
-                        mStatusBarStateText.setText(R.string.heading_control_status_heating);
-                    } else {
-                        mStatusBarStateText.setText(R.string.heading_control_status_cooling);
-                    }
-                    // and update the heat/sleep button by forcing a rebuild of the menus
-                    invalidateOptionsMenu();
-                    // update head temp display
-                    TextView v = (TextView) findViewById(R.id.tv_headTemperature);
-                    v.setText(new StringBuilder().append(mWibean.getHeadTemperature()).toString());
-                    // if we have an Alarm fragment, update the remote UI state
-                    AlarmFragment f = (AlarmFragment) getFragmentManager().findFragmentByTag(TAG_ALARM);
-                    if (f != null) {
-                        f.updateRemoteAlarm(mWibean.getAlarm());
-                    }
+                String newStatusBarText = new String("");
+                switch (mWibean.getConnectionState()) {
+                    case INVALID_CREDENTIALS:
+                        // bad credentials
+                        mCredentialsValid = false;
+                        alertUser("", "Credentials Invalid");
+                        // update Control status text
+                        mStatusBarStateText.setText(R.string.label_control_status_bad);
+                        tryAgain = false;
+                        break;
+                    case TIMEOUT:
+                        // update Control status text
+                        mStatusBarStateText.setText(R.string.label_control_status_bad);
+                        // but keep polling
+                        tryAgain = true;
+                        break;
+                    case CONNECTED:
+                        // if success and we just connected
+                        if ((mHandler != null) && !mCredentialsValid) {
+                            // notify user
+                            mHandler.post(() -> {
+                                Toast.makeText(BrewingProgramListActivity.this, mContext.getString(R.string.notify_wibeanConnectionSuccess), Toast.LENGTH_SHORT).show();
+                            });
+                            // and flip to the brewing programs
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mNavigationDrawerFragment.selectItem(0);
+                                }
+                            });
+                        }
+                        mCredentialsValid = true;
+                        // update Control status text
+                        if (mWibean.isBrewing()) {
+                            newStatusBarText = getString(R.string.label_control_status_brewing);
+                        } else if (mWibean.isHeating()) {
+                            newStatusBarText = getString(R.string.label_control_status_heating);
+                        } else {
+                            newStatusBarText = getString(R.string.label_control_status_cooling);
+                        }
+                        // and update the heat/sleep button by forcing a rebuild of the menus
+                        invalidateOptionsMenu();
+                        // update head temp display
+                        TextView v = (TextView) findViewById(R.id.tv_headTemperature);
+                        v.setText(new StringBuilder().append(mWibean.getHeadTemperature()).toString());
+                        // if we have an Alarm fragment, update the remote UI state
+                        WiBeanSparkState.WiBeanAlarmPackV1 alarmPack = mWibean.getAlarm();
+                        AlarmFragment f = (AlarmFragment) getFragmentManager().findFragmentByTag(TAG_ALARM);
+                        if (mWibean.isSynchronized() && (f != null)) {
+                            f.updateRemoteAlarm(alarmPack);
+                        }
+                        // update the alarm time show on screen
+                        if (alarmPack.getAlarmArmed()) {
+                            mAlarmTimeText.setText(minutesAfterMidnightToString(alarmPack.getOnTimeAsMinutesAfterMidnight()));
+                        } else {
+                            mAlarmTimeText.setText(getString(R.string.alarm_status_off));
+                        }
+                        // update the machine time shown on screen
+                        final int minutesAfterMidnight = mWibean.getMachineTimeAsMinutesAfterMidnight();
+                        mMachineTimeText.setText(minutesAfterMidnightToString(minutesAfterMidnight));
+                        // Only update the new status bar if we don't have any further pending updates
+                        // This prevents the status text from flashing through several states quickly
+                        // when the user makes a lot of change quickly
+                        if (mWibean.isSynchronized() && !newStatusBarText.isEmpty()) {
+                            mStatusBarStateText.setText(newStatusBarText);
+                        }
+                        break;
                 }
                 // if we have a TakeControl fragment, update the UI for proper consistency
                 TakeControlFragment f = (TakeControlFragment) getFragmentManager().findFragmentByTag(TAG_TAKECONTROL);
@@ -830,10 +924,20 @@ public class BrewingProgramListActivity extends Activity
                         f.setCredentialsInvalid();
                     }
                 }
+                if (mNotifyWhenHot && (mWibean.getHeadTemperature() >= mGoalTemperature)) {
+                    deliverHotNotifications();
+                    mNotifyWhenHot = false;
+                }
+                // RELEASE BEFORE TRYING AGAIN
+                mTempLoopMutex.release();
                 if (tryAgain) {
                     // query every 4 seconds when cold
                     int queryInterval = 4000;
-                    if (mWibean.isHeating()) {
+                    // if someone has requested an immediate refresh
+                    if (mFollowupStatus) {
+                        mFollowupStatus = false;
+                        queryInterval = 1;
+                    } else if (mWibean.isHeating()) {
                         // 2 seconds when heating
                         queryInterval = 2000;
                     } else if (mWibean.isBrewing()) {
@@ -843,41 +947,17 @@ public class BrewingProgramListActivity extends Activity
                     mHandler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            temperaturePollLoop();
+                            statusPollLoop();
                         }
                     }, queryInterval);
-                }
-                if (mNotifyWhenHot && (mWibean.getHeadTemperature() >= mGoalTemperature)) {
-                    deliverHotNotifications();
-                    mNotifyWhenHot = false;
                 }
             } catch (Exception e) {
                 // if it fails, no worries
             }
-            mTempLoopMutex.release();
-            makeNotBusy();
-        }
-    }
-
-    private class ToggleAlarmTask extends AsyncTask<WiBeanSparkState.WiBeanAlarmPackV1, Integer, Boolean> {
-        protected Boolean doInBackground(WiBeanSparkState.WiBeanAlarmPackV1... alarmPacks) {
-            boolean success = true;
-            if (alarmPacks.length > 0) {
-                success &= mWibean.setAlarm(alarmPacks[0]);
+            // if we have nothing left to sync, be not busy!
+            if (mWibean.isSynchronized()) {
+                makeNotBusy();
             }
-            return success;
-        }
-
-        protected void onPreExecute() {
-            makeBusy(getString(R.string.notify_alarmUpdate_title), getString(R.string.action_pleaseWait));
-            refreshPrefs();
-        }
-
-        protected void onPostExecute(Boolean result) {
-            if (!result) {
-                alertUser(getString(R.string.alert_ip_error_title), getString(R.string.alert_ip_error_message));
-            }
-            makeNotBusy();
         }
     }
 }

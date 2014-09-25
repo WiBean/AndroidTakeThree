@@ -29,7 +29,7 @@
                 android:layout_marginLeft="@dimen/min_margin_cutoff"
                 android:layout_weight="1"
                 android:labelFor="@+id/et_ssid"
-                android:text="@string/ssid_label"
+                android:text="@string/label_wifi_ssid"
                 android:textColor="@android:color/black"
                 android:textSize="@dimen/rowitem_text_size"
                 android:textStyle="bold" />
@@ -46,7 +46,7 @@
                 android:layout_weight="1"
                 android:background="@null"
                 android:editable="true"
-                android:hint="@string/ssid_hint"
+                android:hint="@string/hint_ssid"
                 android:maxLength="32"
                 android:maxWidth="180dp"
                 android:minWidth="180dp"
@@ -73,7 +73,7 @@
                 android:layout_weight="1"
                 android:labelFor="@+id/et_password"
                 android:singleLine="true"
-                android:text="@string/password_label"
+                android:text="@string/label_wifi_password"
                 android:textColor="@android:color/black"
                 android:textSize="@dimen/rowitem_text_size"
                 android:textStyle="bold" />
@@ -89,7 +89,7 @@
                 android:layout_marginRight="@dimen/min_margin_cutoff"
                 android:layout_weight="1"
                 android:background="@null"
-                android:hint="@string/password_hint"
+                android:hint="@string/hint_wifi_password"
                 android:imeOptions="actionDone"
                 android:inputType="textPassword"
                 android:maxLength="32"
@@ -122,7 +122,7 @@
                 android:enabled="false"
                 android:labelFor="@+id/et_aesKey"
                 android:singleLine="true"
-                android:text="@string/key_label"
+                android:text="@string/label_smartconfig_aes_key"
                 android:textColor="@android:color/black"
                 android:textSize="@dimen/rowitem_text_size"
                 android:textStyle="bold" />
@@ -138,7 +138,7 @@
                 android:layout_weight="1"
                 android:background="@null"
                 android:enabled="false"
-                android:hint="@string/key_label"
+                android:hint="@string/label_smartconfig_aes_key"
                 android:imeOptions="actionNext"
                 android:maxLength="16"
                 android:maxWidth="150dp"
@@ -183,7 +183,7 @@
                 android:background="@drawable/smartconfig_btn_selector_waiting"
                 android:gravity="center"
                 android:minHeight="@dimen/header_height"
-                android:text="@string/smartConfig_start_label"
+                android:text="@string/label_smartConfig_start"
                 android:textColor="@android:color/white" />
         </LinearLayout>
 

@@ -11,14 +11,17 @@ import android.content.DialogInterface;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
+import com.jmnow.wibeantakethree.brewingprograms.data.BrewProgramListAdapter;
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramContentProvider;
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramHelper;
 
@@ -32,12 +35,13 @@ import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramHelper;
  * interface.
  */
 public class BrewingProgramListFragment extends ListFragment implements
-        LoaderManager.LoaderCallbacks<Cursor> {
+        LoaderManager.LoaderCallbacks<Cursor>,
+        BrewProgramListAdapter.EditButtonReceiver {
 
     /**
      * The LOADER instance used here must be identified, whatever you want
      */
-    private static final int PROGRAMS_LOADER = 0;
+    private static final int PROGRAMS_LIST_LOADER = 0;
     /**
      * The serialization (saved instance state) Bundle key representing the
      * activated item position. Only used on tablets.
@@ -51,6 +55,10 @@ public class BrewingProgramListFragment extends ListFragment implements
         @Override
         public void onItemSelected(String id) {
         }
+
+        @Override
+        public void brewProgram(long id) {
+        }
     };
     /**
      * The fragment's current callback object, which is notified of list item
@@ -58,26 +66,29 @@ public class BrewingProgramListFragment extends ListFragment implements
      */
     private Callbacks mCallbacks = sDummyCallbacks;
     public String[] mFromColumns = {
+            BrewingProgramHelper.COLUMN_IMAGE_THUMBNAIL_NAME,
             BrewingProgramHelper.COLUMN_NAME,
             BrewingProgramHelper.COLUMN_DESCRIPTION
     };
     public int[] mToFields = {
-            android.R.id.text1,
-            android.R.id.text2
+            R.id.iv_brew_program_graphic,
+            R.id.tv_listRow_brewProgram_title,
+            R.id.tv_listRow_brewProgram_description
     };
     /**
      * CursorAdapter for the ListView, along with column mappings
      */
-    SimpleCursorAdapter mAdapter = null;
+    BrewProgramListAdapter mAdapter = null;
     /**
      * List of columns which are taken from the database to power the ListView
      * Used in connection with the CursorLoader
      */
     String[] mProjection =
             {
-                    BrewingProgramHelper.COLUMN_ID_ALIASED,
+                    BrewingProgramHelper.COLUMN_ID_ALIASED_SELECT,
                     BrewingProgramHelper.COLUMN_NAME,
-                    BrewingProgramHelper.COLUMN_DESCRIPTION
+                    BrewingProgramHelper.COLUMN_DESCRIPTION,
+                    BrewingProgramHelper.COLUMN_IMAGE_THUMBNAIL_NAME
             };
     // title shows above
     private CharSequence mTitle;
@@ -101,15 +112,26 @@ public class BrewingProgramListFragment extends ListFragment implements
          * Defines a SimpleCursorAdapter for the ListView
          * Utilizes built in Android resources (note android.R....)
          */
+        /*
         mAdapter =
                 new SimpleCursorAdapter(
                         getActivity(),                // Current context
-                        android.R.layout.simple_list_item_2,  // Layout for a single row
+                        //android.R.layout.simple_list_item_2,  // Layout for a single row
+                        R.layout.brew_program_list_row,  // Layout for a single row
                         null,                // No Cursor yet
                         mFromColumns,        // Cursor columns to use
                         mToFields,           // Layout fields to use
                         0                    // No flags
                 );
+                */
+        mAdapter =
+                new BrewProgramListAdapter(
+                        getActivity(), // context
+                        R.layout.brew_program_list_row, // layout ID to inflate
+                        null, // no cursor yet, is set later
+                        0 // no flats
+                );
+        mAdapter.setEditButtonReceiver(this);
         // Sets the adapter for the view
         setListAdapter(mAdapter);
     }
@@ -124,10 +146,10 @@ public class BrewingProgramListFragment extends ListFragment implements
             setActivatedPosition(savedInstanceState.getInt(STATE_ACTIVATED_POSITION));
         }
         /*
-         * Initializes the CursorLoader. The PROGRAMS_LOADER value is eventually passed
+         * Initializes the CursorLoader. The PROGRAMS_LIST_LOADER value is eventually passed
          * to onCreateLoader().
          */
-        getLoaderManager().initLoader(PROGRAMS_LOADER, null, this);
+        getLoaderManager().initLoader(PROGRAMS_LIST_LOADER, null, this);
 
         // setup the long press for delete
         getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -177,7 +199,6 @@ public class BrewingProgramListFragment extends ListFragment implements
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-
         // Activities containing this fragment must implement its callbacks.
         if (!(activity instanceof Callbacks)) {
             throw new IllegalStateException("Activity must implement fragment's callbacks.");
@@ -188,7 +209,6 @@ public class BrewingProgramListFragment extends ListFragment implements
     @Override
     public void onDetach() {
         super.onDetach();
-
         // Reset the active callbacks interface to the dummy implementation.
         mCallbacks = sDummyCallbacks;
     }
@@ -196,10 +216,9 @@ public class BrewingProgramListFragment extends ListFragment implements
     @Override
     public void onListItemClick(ListView listView, View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
-
-        // Notify the active callbacks interface (the activity, if the
-        // fragment is attached to one) that an item has been selected.
-        mCallbacks.onItemSelected(Long.valueOf(id).toString());
+        // grab the title
+        String title = ((TextView) view.findViewById(R.id.tv_listRow_brewProgram_title)).getText().toString();
+        launchBrewModal(Long.valueOf(id), title);
     }
 
     @Override
@@ -211,6 +230,44 @@ public class BrewingProgramListFragment extends ListFragment implements
         }
     }
 
+    /**
+     * Handles the creation of the slide-to-brew modal dialog
+     */
+    public void launchBrewModal(final Long programId, final String programTitle) {
+        AlertDialog.Builder adb = new AlertDialog.Builder(getActivity(), AlertDialog.THEME_HOLO_DARK);
+        adb.setTitle("Slide to Brew!");
+        adb.setNegativeButton(R.string.cancel, null);
+
+        LayoutInflater inf = getActivity().getLayoutInflater();
+        View myView = inf.inflate(R.layout.dialog_brew_confirm, null);
+        adb.setView(myView);
+        final AlertDialog ad = adb.create();
+        TextView tv = (TextView) myView.findViewById(R.id.tv_brewProgram_title);
+        tv.setText(programTitle);
+        SeekBar sb = (SeekBar) myView.findViewById(R.id.sb_brewConfirm);
+
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (progress > 99) {
+                    //brew!
+                    ad.dismiss();
+                    mCallbacks.brewProgram(programId);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            // reset the progress to 0 if they let go of the slider
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                seekBar.setProgress(0);
+            }
+        });
+        ad.show();
+    }
 
     /**
      * Turns on activate-on-click mode. When this mode is on, list items will be
@@ -250,7 +307,7 @@ public class BrewingProgramListFragment extends ListFragment implements
      * Takes action based on the ID of the Loader that's being created
      */
         switch (loaderID) {
-            case PROGRAMS_LOADER:
+            case PROGRAMS_LIST_LOADER:
                 return new CursorLoader(
                         getActivity(),   // Parent activity context
                         BrewingProgramContentProvider.CONTENT_URI,// Table to query
@@ -284,12 +341,19 @@ public class BrewingProgramListFragment extends ListFragment implements
      */
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-
     /*
      * Clears out the adapter's reference to the Cursor.
      * This prevents memory leaks.
      */
         mAdapter.changeCursor(null);
+    }
+
+    /**
+     * Satisfy the BrewProgramListAdapter.EditButtonReceiver interface
+     *
+     */
+    public void launchEditor(long itemId) {
+        mCallbacks.onItemSelected(String.valueOf(itemId));
     }
 
     /**
@@ -302,5 +366,7 @@ public class BrewingProgramListFragment extends ListFragment implements
          * Callback for when an item has been selected.
          */
         public void onItemSelected(String id);
+
+        public void brewProgram(long id);
     }
 }

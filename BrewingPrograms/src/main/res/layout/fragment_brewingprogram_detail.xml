@@ -18,7 +18,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:gravity="left"
-            android:hint="@string/heading_example_program_name"
+            android:hint="@string/hint_example_program_name"
             android:maxLines="1"
             android:singleLine="true"
             android:textAppearance="?android:attr/textAppearanceLarge" />
@@ -28,7 +28,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:gravity="left"
-            android:hint="@string/heading_example_program_description"
+            android:hint="@string/hint_example_program_description"
             android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <TextView
@@ -36,7 +36,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:gravity="left"
-            android:text="@string/heading_program_unit_description" />
+            android:text="@string/label_program_unit_description" />
 
         <LinearLayout
             android:layout_width="fill_parent"

@@ -3,12 +3,7 @@ package com.jmnow.wibeantakethree.brewingprograms;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.LoaderManager;
-import android.content.ContentUris;
-import android.content.CursorLoader;
 import android.content.Intent;
-import android.content.Loader;
-import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
@@ -26,16 +21,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgram;
-import com.jmnow.wibeantakethree.brewingprograms.data.BrewingProgramContentProvider;
 
 /**
  * A fragment representing a single BrewingProgram detail screen.
- * This fragment is either contained in a {@link BrewingProgramListActivity}
- * in two-pane mode (on tablets) or a {@link BrewingProgramDetailActivity}
- * on handsets.
+ * This fragment is contained in a {@link BrewingProgramListActivity}
  */
 public class BrewingProgramDetailFragment extends Fragment implements
-        LoaderManager.LoaderCallbacks<Cursor>,
         View.OnClickListener {
     /**
      * The fragment argument representing the item ID that this fragment
@@ -52,11 +43,9 @@ public class BrewingProgramDetailFragment extends Fragment implements
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
         }
-
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
         }
-
         @Override
         public void afterTextChanged(Editable s) {
             updateUiOnChange();
@@ -151,14 +140,16 @@ public class BrewingProgramDetailFragment extends Fragment implements
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        /*
-         * Initializes the CursorLoader. The PROGRAMS_LOADER value is eventually passed
-         * to onCreateLoader().
-         */
 
         if (!mItem.getId().isEmpty()) {
             mListener.makeBusy("Loading", "Loading program from database...");
-            getLoaderManager().initLoader(PROGRAMS_LOADER, null, this);
+            // call the loader
+            mListener.buildProgramFromId(Long.valueOf(mItem.getId()), new BrewingProgramListActivity.BrewingProgramAcceptor() {
+                @Override
+                public void useBrewingProgram(BrewingProgram bp) {
+                    setBrewProgram(bp);
+                }
+            });
         } else {
             // item is blank, init with default values
             mItem.setName("Untitled Program");
@@ -438,84 +429,19 @@ public class BrewingProgramDetailFragment extends Fragment implements
         }
     }
 
-    /*
-    * Callback that's invoked when the system has initialized the Loader and
-    * is ready to start the query. This usually happens when initLoader() is
-    * called. The loaderID argument contains the ID value passed to the
-    * initLoader() call.
-    */
-    @Override
-    public Loader<Cursor> onCreateLoader(int loaderID, Bundle bundle) {
-        return new CursorLoader(
-                getActivity(),   // Parent activity context
-                ContentUris.withAppendedId(BrewingProgramContentProvider.CONTENT_URI, Long.parseLong(mItem.getId())),// Table to query
-                null,           // null, return every column
-                null,            // No selection clause because the URI handles it!!!
-                null,            // No selection arguments
-                null             // Default sort order
-        );
-    }
-
-    /*
-     * Defines the callback that CursorLoader calls
-     * when it's finished its query
-     */
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        /**
-         * Move the results into the view
-         */
-        if (cursor.getCount() <= 0) {
-            return;
-        }
-        cursor.moveToFirst();
-        try {
-            int k = 0;
-            mItem.setName(cursor.getString(k++));
-            mItem.setDescription(cursor.getString(k++));
-            Integer[] onTimes = new Integer[5];
-            Integer[] offTimes = new Integer[5];
-            onTimes[0] = cursor.getInt((k++));
-            offTimes[0] = cursor.getInt((k++));
-            onTimes[1] = cursor.getInt((k++));
-            offTimes[1] = cursor.getInt((k++));
-            onTimes[2] = cursor.getInt((k++));
-            offTimes[2] = cursor.getInt((k++));
-            onTimes[3] = cursor.getInt((k++));
-            offTimes[3] = cursor.getInt((k++));
-            onTimes[4] = cursor.getInt((k++));
-            offTimes[4] = cursor.getInt((k++));
-            mItem.setOnTimes(onTimes);
-            mItem.setOffTimes(offTimes);
-            // skip one for the original author
-            k++;
-            mItem.setShortUrl(cursor.getString(k++));
-            mItem.setCreatedAt(cursor.getString(k++));
-            mItem.setModifiedAt(cursor.getString(k++));
-        } catch (Exception e) {
-            System.out.println("CURSOR ERROR: " + e.getLocalizedMessage());
-        }
+    public void setBrewProgram(BrewingProgram theProgram) {
+        mItem = new BrewingProgram(theProgram);
         ((Button) getView().findViewById(R.id.btn_brew)).setEnabled(true);
         updateUiFromItem();
     }
 
-    /*
-    * Invoked when the CursorLoader is being reset. For example, this is
-    * called if the data in the provider changes and the Cursor becomes stale.
-    */
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-        // nothing to do here
-    }
-
     public interface BrewingProgramDetailCallbacks {
         void brewProgram(BrewingProgram theProgram);
-
         void makeBusy(final CharSequence title, final CharSequence message);
-
         void makeNotBusy();
-
         boolean saveOrCreateItem(BrewingProgram aProgram);
+
+        void buildProgramFromId(final long id, final BrewingProgramListActivity.BrewingProgramAcceptor acceptor);
     }
 
     private class ShortenUrlTask extends AsyncTask<BrewingProgram, Integer, Boolean> {

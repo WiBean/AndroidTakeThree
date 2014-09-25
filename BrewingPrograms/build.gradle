@@ -6,11 +6,10 @@ android {
     buildToolsVersion '19.1.0'
     defaultConfig {
         applicationId "com.jmnow.wibeantakethree.brewingprograms"
-        minSdkVersion 16
+        minSdkVersion 17
         targetSdkVersion 19
-        versionCode 3
-        versionName '1.02'
-        applicationId 'com.jmnow.wibeantakethree.brewingprograms'
+        versionCode 7
+        versionName '1.06'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_7
@@ -45,5 +44,7 @@ dependencies {
     compile 'com.google.android.gms:play-services:5.+'
     // For wearable-capable notifications as well as all the other compat stuff
     compile "com.android.support:support-v4:20.+"
+    // for HashCodeBuilder
+    compile "org.apache.commons:commons-lang3:3.3+"
 }
 apply plugin: 'retrolambda'

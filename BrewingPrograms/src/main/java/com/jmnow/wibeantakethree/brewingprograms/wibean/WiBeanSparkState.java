@@ -8,6 +8,8 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.http.HttpStatus;
 import org.json.JSONObject;
 
 import java.util.concurrent.TimeUnit;
@@ -23,12 +25,14 @@ public class WiBeanSparkState {
     public static final String PREF_KEY_DEVICE_ID = "SPARK_DEVICE_ID";
     public static final String PREF_KEY_ACCESS_TOKEN = "SPARK_ACCESS_TOKEN";
     public static final String PREF_KEY_BREW_TEMP = "BREW_TEMP_IDEAL";
+    public static final String PREF_KEY_DEVICE_TIMEZONE = "SPARK_TIME_ZONE";
+    public static final String PREF_KEY_ALARM_TIME_HOUR = "ALARM_TIME_HOUR";
+    public static final String PREF_KEY_ALARM_TIME_MINUTE = "ALARM_TIME_MINUTE";
 
     public static final int RETURN_CODE_PUMP_SUCCESS = 1;
     public static final int RETURN_CODE_PUMP_INVALID_PROGRAM = -1;
     public static final int RETURN_CODE_PUMP_BUSY = -2;
     public static final int RETURN_CODE_PUMP_CANCELLED = 2;
-
     public static final MediaType TEXT
             = MediaType.parse("application/json; charset=utf-8");
     // constants
@@ -37,54 +41,105 @@ public class WiBeanSparkState {
     private final String SPARK_BASE_URL = "https://api.spark.io/v1/devices/";
     // httpClient, make one to save resources
     private final OkHttpClient mHttpClient = new OkHttpClient();
-    private WiBeanAlarmPackV1 mAlarm = new WiBeanAlarmPackV1();
-
-    private boolean mHeating = false;
-    private boolean mBrewing = false;
-    private float mDesiredTemperatureInCelsius = 95;
-
+    // Status variables which are user modifiable
+    private boolean mHeatingLocal = false;
+    private boolean mHeatingRemote = false;
+    private float mDesiredTemperatureInCelsiusLocal = 92;
+    private float mDesiredTemperatureInCelsiusRemote = 92;
+    private WiBeanAlarmPackV1 mAlarmLocal = new WiBeanAlarmPackV1();
+    private WiBeanAlarmPackV1 mAlarmRemote = new WiBeanAlarmPackV1();
+    // Status variables which are read-only
     private float mCurrentHeadTemperatureInCelsius = 0;
     private float mCurrentAmbientTemperatureInCelsius = 0;
-
+    private boolean mBrewing = false;
+    private boolean mHasConnected = false;
+    private CONNECTION_STATE mConnectionState = CONNECTION_STATE.DISCONNECTED;
     private String mSparkDeviceId;
     private String mSparkAccessToken;
     private int mRequestTimeoutInSeconds;
-
+    private int mMachineTimeAsMinutesAfterMidnight = 0;
 
     public WiBeanSparkState() {
-        setRequestTimeout(10);
+        setRequestTimeout(8);
     }
 
     public boolean isHeating() {
-        return mHeating;
+        return this.mHeatingRemote;
+    }
+
+    public boolean isHeatingLocal() {
+        return this.mHeatingLocal;
     }
 
     public boolean isBrewing() {
-        return mBrewing;
+        return this.mBrewing;
+    }
+
+    public boolean setHeating(boolean heating) {
+        this.mHeatingLocal = heating;
+        return true;
     }
 
     public boolean setTemperature(float desiredTemperature) {
+        this.mDesiredTemperatureInCelsiusLocal = Math.min(Math.max(desiredTemperature, MIN_TEMP), MAX_TEMP);
+        return true;
+    }
+
+    public String getSparkDeviceId() {
+        return this.mSparkDeviceId;
+    }
+
+    public boolean setSparkDeviceId(String mSparkDeviceId) {
+        this.mSparkDeviceId = mSparkDeviceId;
+        return true;
+    }
+
+    public String getSparkAccessToken() {
+        return this.mSparkAccessToken;
+    }
+
+    public boolean setSparkAccessToken(String mSparkAccessToken) {
+        this.mSparkAccessToken = mSparkAccessToken;
+        return true;
+    }
+
+    public boolean setAlarm(WiBeanAlarmPackV1 alarm) {
+        mAlarmLocal = new WiBeanAlarmPackV1(alarm);
+        return true;
+    }
+
+    public WiBeanAlarmPackV1 getAlarm() {
+        return new WiBeanAlarmPackV1(this.mAlarmRemote);
+    }
+
+    // actually send the request to set the heat temperature
+    private boolean sendTemperature() {
+        if (mDesiredTemperatureInCelsiusLocal == mDesiredTemperatureInCelsiusRemote) {
+            return true;
+        }
         StringBuilder targetURL = new StringBuilder();
         targetURL.append(assembleBaseUrl()).append("heatTarget");
         StringBuilder paramBuilder = new StringBuilder();
         // it doesn't make sense to specify more than single degrees
-        paramBuilder.append(String.format("%.0f", mDesiredTemperatureInCelsius));
+        paramBuilder.append(String.format("%.0f", mDesiredTemperatureInCelsiusLocal));
         RequestBody formBody = new FormEncodingBuilder()
                 .add("access_token", mSparkAccessToken)
                 .add("params", paramBuilder.toString())
                 .build();
-        return basicSparkFunctionPost(targetURL.toString(), formBody);
-    }
-
-    public boolean makeHeat(float desiredTemperature) {
-        mDesiredTemperatureInCelsius = Math.min(Math.max(desiredTemperature, MIN_TEMP), MAX_TEMP);
-        return makeHeat();
+        boolean success = (basicSparkFunctionPost(targetURL.toString(), formBody) == 1);
+        if (success) {
+            mDesiredTemperatureInCelsiusRemote = mDesiredTemperatureInCelsiusLocal;
+        }
+        return success;
     }
 
     // take control of the machine, so WiBean is in charge of heating
-    public boolean makeHeat() {
-        setTemperature(mDesiredTemperatureInCelsius);
-
+    private boolean makeHeat() {
+        setTemperature(mDesiredTemperatureInCelsiusLocal);
+        mHeatingLocal = true;
+        if (mHeatingRemote == mHeatingLocal) {
+            return true;
+        }
         StringBuilder targetURL = new StringBuilder();
         targetURL.append(assembleBaseUrl()).append("heatToggle");
         StringBuilder paramBuilder = new StringBuilder();
@@ -94,15 +149,19 @@ public class WiBeanSparkState {
                 .add("access_token", mSparkAccessToken)
                 .add("params", paramBuilder.toString())
                 .build();
-        boolean success = basicSparkFunctionPost(targetURL.toString(), formBody);
+        boolean success = (basicSparkFunctionPost(targetURL.toString(), formBody) == 1);
         if (success) {
-            mHeating = true;
+            mHeatingRemote = true;
         }
         return success;
     }
 
-    // reset control of the WiBean device so the machine acts as if we aren't even there.
-    public boolean makeHibernate() {
+    // disable the heating circuit on the WiBean
+    private boolean makeHibernate() {
+        mHeatingLocal = false;
+        if (mHeatingRemote == mHeatingLocal) {
+            return true;
+        }
         StringBuilder targetURL = new StringBuilder();
         targetURL.append(assembleBaseUrl()).append("heatToggle");
         StringBuilder paramBuilder = new StringBuilder();
@@ -112,35 +171,36 @@ public class WiBeanSparkState {
                 .add("access_token", mSparkAccessToken)
                 .add("params", paramBuilder.toString())
                 .build();
-        boolean success = basicSparkFunctionPost(targetURL.toString(), formBody);
+        boolean success = (basicSparkFunctionPost(targetURL.toString(), formBody) == 1);
         if (success) {
-            mHeating = false;
+            mHeatingRemote = false;
         }
         return success;
     }
 
-    // take control of the machine, so WiBean is in charge of heating
-    public boolean setAlarm(WiBeanAlarmPackV1 alarm) {
+    // update the alarm, and timezone on the remote device
+    private boolean sendAlarm() {
+        if (mAlarmLocal.equals(mAlarmRemote)) {
+            return true;
+        }
         StringBuilder targetURL = new StringBuilder();
         targetURL.append(assembleBaseUrl()).append("toggleAlarm");
         StringBuilder paramBuilder = new StringBuilder();
         // it doesn't make sense to specify more than single degrees
-        paramBuilder.append(alarm.getOnTimeAsMinutesAfterMidnight());
-        paramBuilder.append(",").append(alarm.getUtcOffset());
+        paramBuilder.append(mAlarmLocal.getOnTimeAsMinutesAfterMidnight());
+        paramBuilder.append(",").append(mAlarmLocal.getUtcOffset());
         RequestBody formBody = new FormEncodingBuilder()
                 .add("access_token", mSparkAccessToken)
                 .add("params", paramBuilder.toString())
                 .build();
-        boolean success = basicSparkFunctionPost(targetURL.toString(), formBody);
-        mAlarm = alarm;
+        boolean success = (basicSparkFunctionPost(targetURL.toString(), formBody) == 1);
+        if (success) {
+            mAlarmRemote = new WiBeanAlarmPackV1(mAlarmLocal);
+        }
         return success;
     }
 
-    public WiBeanAlarmPackV1 getAlarm() {
-        return mAlarm;
-    }
-
-    private boolean basicSparkFunctionPost(String targetUrl, RequestBody body) {
+    private int basicSparkFunctionPost(String targetUrl, RequestBody body) {
         Request.Builder builder = new Request.Builder().url(targetUrl);
         if (body != null) {
             builder.post(body);
@@ -152,48 +212,17 @@ public class WiBeanSparkState {
             if ((response.code() == 200) &&
                     bodyAsObject.has("return_value")) {
                 int returnCode = Integer.valueOf(bodyAsObject.getString("return_value"));
-                return (returnCode == 1);
+                return returnCode;
             }
         } catch (Exception e) {
             //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
             System.out.println("basicSparkFunctionPost failed: " + e.getMessage() + ' ' + e.getClass());
         }
-        return false;
+        return -99;
     }
 
-    // queries for the state of the headTemperature sensor
     public float getHeadTemperature() {
         return mCurrentHeadTemperatureInCelsius;
-        // THE OLD WAY
-        /*
-        String targetURL = assembleBaseUrl() + "headTemp?" + "access_token=" + mSparkAccessToken;
-        Request request = new Request.Builder().url(targetURL).build();
-        try {
-            Response response = mHttpClient.newCall(request).execute();
-            final JSONObject bodyAsObject = new JSONObject(response.body().string().trim().replace("\n", ""));
-            if ((response.code() == 200) &&
-                    bodyAsObject.has("result")) {
-                mCurrentHeadTemperatureInCelsius = Float.valueOf(bodyAsObject.getString("result"));
-                emptyBuilderForTemperatureReturn.append(String.format("%.1f", mCurrentHeadTemperatureInCelsius));
-                return true;
-            }
-            if ((response.code() == 408)) {
-                emptyBuilderForTemperatureReturn.append("LOST?");
-                return true;
-            }
-            if ((response.code() == 403)) {
-                // signifies bad credentials
-                emptyBuilderForTemperatureReturn.append("ERR");
-                return true;
-            }
-        } catch (Exception e) {
-            //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
-            System.out.println("getHeadTemperature Failed: " + e.getMessage() + ' ' + e.getClass());
-        }
-        // if we get here, something went wrong
-        emptyBuilderForTemperatureReturn.append("ERR");
-        return true;
-        */
     }
 
     /**
@@ -240,16 +269,18 @@ public class WiBeanSparkState {
         return 1;
     }
 
-
     // Query and update status
     // reset control of the WiBean device so the machine acts as if we aren't even there.
-    public int queryStatus() {
+    public CONNECTION_STATE queryStatus() {
         String targetURL = assembleBaseUrl() + "status?" + "access_token=" + mSparkAccessToken;
         Request request = new Request.Builder().url(targetURL).build();
         try {
+            if (mConnectionState == CONNECTION_STATE.DISCONNECTED) {
+                mConnectionState = CONNECTION_STATE.CONNECTING;
+            }
             Response response = mHttpClient.newCall(request).execute();
             final JSONObject bodyAsObject = new JSONObject(response.body().string().trim().replace("\n", ""));
-            if ((response.code() == 200) &&
+            if ((response.code() == HttpStatus.SC_OK) &&
                     bodyAsObject.has("result")) {
                 final JSONObject statusAsObject = new JSONObject(bodyAsObject.getString("result"));
                 // object contains the following
@@ -257,23 +288,42 @@ public class WiBeanSparkState {
                 // alt: alarm time as minutes after midnight (values greater than minutes_in_day imply will never fire)
                 // b: boolean is machine currently in pumping cycle?
                 // h: boolean, is machine currently seeking a goal temperature
-                mAlarm.setOnTimeAsMinutesAfterMidnight(statusAsObject.getInt("alt"));
-                mAlarm.setUtcOffset(statusAsObject.getInt("clktz"));
-                mHeating = (statusAsObject.getInt("h") != 0);
+                mHeatingRemote = (statusAsObject.getInt("h") != 0);
                 mBrewing = statusAsObject.getBoolean("b");
                 mCurrentHeadTemperatureInCelsius = (float) statusAsObject.getDouble("t_h");
                 mCurrentAmbientTemperatureInCelsius = (float) statusAsObject.getDouble("t_a");
+                mMachineTimeAsMinutesAfterMidnight = statusAsObject.getInt("tn");
+                mDesiredTemperatureInCelsiusRemote = (float) statusAsObject.getDouble("t_g");
+                mAlarmRemote.setOnTimeAsMinutesAfterMidnight(statusAsObject.getInt("alt"));
+                mAlarmRemote.setUtcOffset(statusAsObject.getInt("clktz"));
+                // if we just connected, set the local alarm time equal to the remote so it doesn't
+                // get overwritten
+                if (mConnectionState == CONNECTION_STATE.CONNECTING) {
+                    mAlarmLocal.setOnTimeAsMinutesAfterMidnight(mAlarmRemote.getOnTimeAsMinutesAfterMidnight());
+                    mDesiredTemperatureInCelsiusLocal = mDesiredTemperatureInCelsiusRemote;
+                }
+                mConnectionState = CONNECTION_STATE.CONNECTED;
+            } else if ((response.code() == HttpStatus.SC_FORBIDDEN)
+                    || (response.code() == HttpStatus.SC_UNAUTHORIZED)) {
+                mConnectionState = CONNECTION_STATE.INVALID_CREDENTIALS;
+            } else if ((response.code() == HttpStatus.SC_REQUEST_TIMEOUT)
+                    || (response.code() == HttpStatus.SC_NOT_FOUND)) {
+                mConnectionState = CONNECTION_STATE.TIMEOUT;
             }
             // 200 is success
             // 408 is timeout
             // 403 is bad credentials
-            return Integer.valueOf(response.code());
+            return mConnectionState;
         } catch (Exception e) {
             //responseText.setText("Err chk heat: " + e.getMessage() + ' ' + e.getClass());
             System.out.println("queryStatus Failed: " + e.getMessage() + ' ' + e.getClass());
         }
         // if we get here, something went wrong
-        return -1;
+        return CONNECTION_STATE.DISCONNECTED;
+    }
+
+    public int getMachineTimeAsMinutesAfterMidnight() {
+        return mMachineTimeAsMinutesAfterMidnight;
     }
 
     /**
@@ -284,22 +334,36 @@ public class WiBeanSparkState {
         return (SPARK_BASE_URL + mSparkDeviceId + "/");
     }
 
-    public String getSparkDeviceId() {
-        return mSparkDeviceId;
+    public boolean isSynchronized() {
+        boolean syncd = true;
+        syncd &= (mConnectionState == CONNECTION_STATE.CONNECTED);
+        syncd &= (mHeatingLocal == mHeatingRemote);
+        syncd &= mAlarmLocal.equals(mAlarmRemote);
+        syncd &= (mDesiredTemperatureInCelsiusLocal == mDesiredTemperatureInCelsiusRemote);
+        return syncd;
     }
 
-    public boolean setSparkDeviceId(String mSparkDeviceId) {
-        this.mSparkDeviceId = mSparkDeviceId;
-        return true;
+    public boolean synchronizeWithRemote() {
+        if (mConnectionState != CONNECTION_STATE.CONNECTED) {
+            queryStatus();
+        }
+        if (mConnectionState != CONNECTION_STATE.CONNECTED) {
+            return false;
+        }
+        boolean success = true;
+        success &= sendTemperature();
+        if (mHeatingLocal) {
+            success &= makeHeat();
+        } else {
+            success &= makeHibernate();
+        }
+        // update the alarm and timezone if needed
+        success &= sendAlarm();
+        return success;
     }
 
-    public String getSparkAccessToken() {
-        return mSparkAccessToken;
-    }
-
-    public boolean setSparkAccessToken(String mSparkAccessToken) {
-        this.mSparkAccessToken = mSparkAccessToken;
-        return true;
+    public CONNECTION_STATE getConnectionState() {
+        return mConnectionState;
     }
 
     /**
@@ -317,15 +381,51 @@ public class WiBeanSparkState {
         return true;
     }
 
+    public static enum CONNECTION_STATE {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED,
+        INVALID_CREDENTIALS,
+        TIMEOUT
+    }
+
     static public class WiBeanAlarmPackV1 {
         public static final int MINUTES_IN_DAY = 24 * 60;
 
         private int mOnTimeAsMinutesAfterMidnight;
-        private boolean mAlarmArmed = false;
+        private boolean mAlarmArmed;
         private int mUtcOffset = 0;
 
+        /**
+         * Copy constructor.
+         */
+        public WiBeanAlarmPackV1(WiBeanAlarmPackV1 pack) {
+            this.setOnTimeAsMinutesAfterMidnight(pack.mOnTimeAsMinutesAfterMidnight);
+            this.mUtcOffset = pack.mUtcOffset;
+        }
+
         public WiBeanAlarmPackV1() {
-            mOnTimeAsMinutesAfterMidnight = 480;
+            setOnTimeAsMinutesAfterMidnight(480);
+        }
+
+        /**
+         * Equality overrides
+         */
+        public boolean equals(WiBeanAlarmPackV1 another) {
+            return (another instanceof WiBeanAlarmPackV1)
+                    && (another.mOnTimeAsMinutesAfterMidnight == this.mOnTimeAsMinutesAfterMidnight)
+                    && (another.mUtcOffset == this.mUtcOffset)
+                    && (another.mAlarmArmed == this.mAlarmArmed);
+        }
+
+        public int hashCode() {
+            // you pick a hard-coded, randomly chosen, non-zero, odd number
+            // ideally different for each class
+            return new HashCodeBuilder(17, 37).
+                    append(mUtcOffset).
+                    append(mOnTimeAsMinutesAfterMidnight).
+                    append(mAlarmArmed).
+                    toHashCode();
         }
 
         public int getOnTimeAsMinutesAfterMidnight() {
@@ -346,8 +446,6 @@ public class WiBeanSparkState {
             }
         }
 
-        ;
-
         public int getUtcOffset() {
             return mUtcOffset;
         }
@@ -355,5 +453,7 @@ public class WiBeanSparkState {
         public boolean getAlarmArmed() {
             return mAlarmArmed;
         }
+
+
     }
 }
