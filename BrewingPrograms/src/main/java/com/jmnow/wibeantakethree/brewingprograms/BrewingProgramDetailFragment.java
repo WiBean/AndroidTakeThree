@@ -43,30 +43,78 @@ public class BrewingProgramDetailFragment extends Fragment implements
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
         }
+
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
+
         }
+
         @Override
         public void afterTextChanged(Editable s) {
+            // remove prefixed decimal points
+            while ((s.length() > 0) && (s.charAt(0) == '.')) {
+                s.delete(0, 1);
+            }
             updateUiOnChange();
         }
     };
-    // ensure the controls have at least a zero when they lose focus
-    private View.OnFocusChangeListener mFocusLostChecker = new View.OnFocusChangeListener() {
+    private View.OnFocusChangeListener mDecimalPlaceChecker = new View.OnFocusChangeListener() {
         @Override
         public void onFocusChange(View v, boolean hasFocus) {
-            if (!hasFocus) {
-                EditText et = (EditText) v;
-                if (et.length() == 0) {
-                    et.setText("0");
-                }
+            if (hasFocus) {
+                return;
             }
+            Editable s = ((TextView) v).getEditableText();
+            if (s.length() == 0) {
+                s.append("0.0");
+                return;
+            }
+
+            int decMark = -1;
+            int k = 0;
+            // find the decimal
+            while (k < s.length()) {
+                if (s.charAt(k) == '.') {
+                    decMark = k;
+                    ++k;
+                    break;
+                }
+                // prevent more than 2 characters before the decimal
+                if (k >= 2) {
+                    s.delete(k, k + 1);
+                    continue;
+                }
+                ++k;
+            }
+            // remove dupilcate decimal places
+            while (k < s.length()) {
+                if (s.charAt(k) == '.') {
+                    s.delete(k, k + 1);
+                    continue;
+                }
+                ++k;
+            }
+            // if they omitted a trailing .0, give them one
+            if (decMark == -1) {
+                s.append(".0");
+            }
+            // if they omitted a trailing 0, give them one
+            else if (decMark == (s.length() - 1)) {
+                s.append('0');
+            }
+            // check for points after decimal
+            else if (s.length() >= decMark + 2) {
+                s.delete(decMark + 2, s.length());
+            }
+
         }
     };
     // Do we have unsaved changes?
     private boolean mUnsavedChanges = false;
     //for the share button
     private ShareActionProvider mShareActionProvider;
+    // keep track of the numeric input fields
+    private EditText[] mNumericInputFields = new EditText[10];
     /**
      * The content this fragment is presenting.
      */
@@ -109,31 +157,29 @@ public class BrewingProgramDetailFragment extends Fragment implements
         ((Button) rootView.findViewById(R.id.btn_brew)).setOnClickListener(this);
         ((Button) rootView.findViewById(R.id.btn_programDiscardChanges)).setOnClickListener(this);
 
+        // populate the list of controls
+        mNumericInputFields[0] = (EditText) rootView.findViewById(R.id.et_onForOne);
+        mNumericInputFields[1] = (EditText) rootView.findViewById(R.id.et_offForOne);
+        mNumericInputFields[2] = (EditText) rootView.findViewById(R.id.et_onForTwo);
+        mNumericInputFields[3] = (EditText) rootView.findViewById(R.id.et_offForTwo);
+        mNumericInputFields[4] = (EditText) rootView.findViewById(R.id.et_onForThree);
+        mNumericInputFields[5] = (EditText) rootView.findViewById(R.id.et_offForThree);
+        mNumericInputFields[6] = (EditText) rootView.findViewById(R.id.et_onForFour);
+        mNumericInputFields[7] = (EditText) rootView.findViewById(R.id.et_offForFour);
+        mNumericInputFields[8] = (EditText) rootView.findViewById(R.id.et_onForFive);
+        mNumericInputFields[9] = (EditText) rootView.findViewById(R.id.et_offForFive);
+
         // setup difference checker to enable/disable save button
         ((EditText) rootView.findViewById(R.id.et_program_name)).addTextChangedListener(mDifferenceToggle);
         ((EditText) rootView.findViewById(R.id.et_program_description)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_onForOne)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_offForOne)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_onForTwo)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_offForTwo)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_onForThree)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_offForThree)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_onForFour)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_offForFour)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_onForFive)).addTextChangedListener(mDifferenceToggle);
-        ((EditText) rootView.findViewById(R.id.et_offForFive)).addTextChangedListener(mDifferenceToggle);
+        for (final EditText et : mNumericInputFields) {
+            et.addTextChangedListener(mDifferenceToggle);
+        }
+        // setup decimal place checker
+        for (final EditText et : mNumericInputFields) {
+            et.setOnFocusChangeListener(mDecimalPlaceChecker);
+        }
 
-        // setup on focus lost checker
-        rootView.findViewById(R.id.et_onForOne).setOnFocusChangeListener(mFocusLostChecker);
-        rootView.findViewById(R.id.et_offForOne).setOnFocusChangeListener(mFocusLostChecker);
-        rootView.findViewById(R.id.et_onForTwo).setOnFocusChangeListener(mFocusLostChecker);
-        rootView.findViewById(R.id.et_offForTwo).setOnFocusChangeListener(mFocusLostChecker);
-        rootView.findViewById(R.id.et_onForThree).setOnFocusChangeListener(mFocusLostChecker);
-        rootView.findViewById(R.id.et_offForThree).setOnFocusChangeListener(mFocusLostChecker);
-        rootView.findViewById(R.id.et_onForFour).setOnFocusChangeListener(mFocusLostChecker);
-        rootView.findViewById(R.id.et_offForFour).setOnFocusChangeListener(mFocusLostChecker);
-        rootView.findViewById(R.id.et_onForFive).setOnFocusChangeListener(mFocusLostChecker);
-        rootView.findViewById(R.id.et_offForFive).setOnFocusChangeListener(mFocusLostChecker);
         return rootView;
     }
 
@@ -223,28 +269,29 @@ public class BrewingProgramDetailFragment extends Fragment implements
         et = (EditText) getView().findViewById(R.id.et_program_description);
         et.setText(mItem.getDescription());
 
-        Integer[] onTimes = mItem.getOnTimes();
-        Integer[] offTimes = mItem.getOffTimes();
+        // convert from 100ms (units of coffee machine) to seconds (for user display)
+        final Float[] onTimesAsFloat = mItem.getOnTimesAsSeconds();
+        final Float[] offTimesAsFloat = mItem.getOffTimesAsSeconds();
         et = (EditText) getView().findViewById(R.id.et_onForOne);
-        et.setText(onTimes[0].toString());
+        et.setText(onTimesAsFloat[0].toString());
         et = (EditText) getView().findViewById(R.id.et_offForOne);
-        et.setText(offTimes[0].toString());
+        et.setText(offTimesAsFloat[0].toString());
         et = (EditText) getView().findViewById(R.id.et_onForTwo);
-        et.setText(onTimes[1].toString());
+        et.setText(onTimesAsFloat[1].toString());
         et = (EditText) getView().findViewById(R.id.et_offForTwo);
-        et.setText(offTimes[1].toString());
+        et.setText(offTimesAsFloat[1].toString());
         et = (EditText) getView().findViewById(R.id.et_onForThree);
-        et.setText(onTimes[2].toString());
+        et.setText(onTimesAsFloat[2].toString());
         et = (EditText) getView().findViewById(R.id.et_offForThree);
-        et.setText(offTimes[2].toString());
+        et.setText(offTimesAsFloat[2].toString());
         et = (EditText) getView().findViewById(R.id.et_onForFour);
-        et.setText(onTimes[3].toString());
+        et.setText(onTimesAsFloat[3].toString());
         et = (EditText) getView().findViewById(R.id.et_offForFour);
-        et.setText(offTimes[3].toString());
+        et.setText(offTimesAsFloat[3].toString());
         et = (EditText) getView().findViewById(R.id.et_onForFive);
-        et.setText(onTimes[4].toString());
+        et.setText(onTimesAsFloat[4].toString());
         et = (EditText) getView().findViewById(R.id.et_offForFive);
-        et.setText(offTimes[4].toString());
+        et.setText(offTimesAsFloat[4].toString());
 
         tv = (TextView) getView().findViewById(R.id.tv_createdAt);
         tv.setText(mItem.getCreatedAt());
@@ -276,34 +323,37 @@ public class BrewingProgramDetailFragment extends Fragment implements
         Integer[] offTimes = mItem.getOffTimes();
         v = (EditText) getView().findViewById(R.id.et_onForOne);
         ifEmptySetZero(v);
-        onTimes[0] = Integer.valueOf(v.getText().toString());
+        // convert from seconds (user displayed format) to 100ms units (machine time units)
+        // as we limit to one decimal point above, do this by just removing the decimal point and
+        // cast to Integer
+        onTimes[0] = Integer.valueOf(v.getText().toString().replace(".", ""));
         v = (EditText) getView().findViewById(R.id.et_offForOne);
         ifEmptySetZero(v);
-        offTimes[0] = Integer.valueOf(v.getText().toString());
+        offTimes[0] = Integer.valueOf(v.getText().toString().replace(".", ""));
         v = (EditText) getView().findViewById(R.id.et_onForTwo);
         ifEmptySetZero(v);
-        onTimes[1] = Integer.valueOf(v.getText().toString());
+        onTimes[1] = Integer.valueOf(v.getText().toString().replace(".", ""));
         v = (EditText) getView().findViewById(R.id.et_offForTwo);
         ifEmptySetZero(v);
-        offTimes[1] = Integer.valueOf(v.getText().toString());
+        offTimes[1] = Integer.valueOf(v.getText().toString().replace(".", ""));
         v = (EditText) getView().findViewById(R.id.et_onForThree);
         ifEmptySetZero(v);
-        onTimes[2] = Integer.valueOf(v.getText().toString());
+        onTimes[2] = Integer.valueOf(v.getText().toString().replace(".", ""));
         v = (EditText) getView().findViewById(R.id.et_offForThree);
         ifEmptySetZero(v);
-        offTimes[2] = Integer.valueOf(v.getText().toString());
+        offTimes[2] = Integer.valueOf(v.getText().toString().replace(".", ""));
         v = (EditText) getView().findViewById(R.id.et_onForFour);
         ifEmptySetZero(v);
-        onTimes[3] = Integer.valueOf(v.getText().toString());
+        onTimes[3] = Integer.valueOf(v.getText().toString().replace(".", ""));
         v = (EditText) getView().findViewById(R.id.et_offForFour);
         ifEmptySetZero(v);
-        offTimes[3] = Integer.valueOf(v.getText().toString());
+        offTimes[3] = Integer.valueOf(v.getText().toString().replace(".", ""));
         v = (EditText) getView().findViewById(R.id.et_onForFive);
         ifEmptySetZero(v);
-        onTimes[4] = Integer.valueOf(v.getText().toString());
+        onTimes[4] = Integer.valueOf(v.getText().toString().replace(".", ""));
         v = (EditText) getView().findViewById(R.id.et_offForFive);
         ifEmptySetZero(v);
-        offTimes[4] = Integer.valueOf(v.getText().toString());
+        offTimes[4] = Integer.valueOf(v.getText().toString().replace(".", ""));
 
         mItem.setOnTimes(onTimes);
         mItem.setOffTimes(offTimes);
@@ -320,46 +370,46 @@ public class BrewingProgramDetailFragment extends Fragment implements
         if (!v.getText().toString().contentEquals(mItem.getDescription())) {
             return true;
         }
-        Integer[] onTimes = mItem.getOnTimes();
-        Integer[] offTimes = mItem.getOffTimes();
+        Float[] onTimesAsFloat = mItem.getOnTimesAsSeconds();
+        Float[] offTimesAsFloat = mItem.getOffTimesAsSeconds();
         v = (EditText) getView().findViewById(R.id.et_onForOne);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[0])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(onTimesAsFloat[0])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForOne);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[0])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(offTimesAsFloat[0])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_onForTwo);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[1])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(onTimesAsFloat[1])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForTwo);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[1])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(offTimesAsFloat[1])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_onForThree);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[2])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(onTimesAsFloat[2])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForThree);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[2])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(offTimesAsFloat[2])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_onForFour);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[3])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(onTimesAsFloat[3])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForFour);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[3])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(offTimesAsFloat[3])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_onForFive);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(onTimes[4])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(onTimesAsFloat[4])) {
             return true;
         }
         v = (EditText) getView().findViewById(R.id.et_offForFive);
-        if (v.getText().toString().isEmpty() || !Integer.valueOf(v.getText().toString()).equals(offTimes[4])) {
+        if (v.getText().toString().isEmpty() || !Float.valueOf(v.getText().toString()).equals(offTimesAsFloat[4])) {
             return true;
         }
         return false;
@@ -415,6 +465,10 @@ public class BrewingProgramDetailFragment extends Fragment implements
 
     public void saveIfNecessary() {
         if (mUnsavedChanges) {
+            // clear focus so the onFocusLost listeners can run and prune inputs
+            for (final EditText et : mNumericInputFields) {
+                et.clearFocus();
+            }
             updateItemFromUi();
             try {
                 AsyncTask<BrewingProgram, Integer, Boolean> task = new ShortenUrlTask().execute(mItem);
@@ -437,8 +491,11 @@ public class BrewingProgramDetailFragment extends Fragment implements
 
     public interface BrewingProgramDetailCallbacks {
         void brewProgram(BrewingProgram theProgram);
+
         void makeBusy(final CharSequence title, final CharSequence message);
+
         void makeNotBusy();
+
         boolean saveOrCreateItem(BrewingProgram aProgram);
 
         void buildProgramFromId(final long id, final BrewingProgramListActivity.BrewingProgramAcceptor acceptor);

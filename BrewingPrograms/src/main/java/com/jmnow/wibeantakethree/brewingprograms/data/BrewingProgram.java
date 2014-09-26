@@ -23,7 +23,9 @@ import java.util.List;
 public class BrewingProgram {
     public static final Integer NUMONOFFTIMES = 5;
     private Integer[] mOnTimes = new Integer[NUMONOFFTIMES];
+    private Float[] mOnTimesAsSeconds = new Float[NUMONOFFTIMES];
     private Integer[] mOffTimes = new Integer[NUMONOFFTIMES];
+    private Float[] mOffTimesAsSeconds = new Float[NUMONOFFTIMES];
     public static final Integer MIN_TIME_UNITS = 0;
     public static final Integer MAX_TIME_UNITS = 100;
     public static final String GOOGLE_SHORTEN_URL = "https://www.googleapis.com/urlshortener/v1/url";
@@ -52,10 +54,6 @@ public class BrewingProgram {
         setId(id.toString());
         setName(name.toString());
         setDescription("");
-        for (Integer k = 0; k < NUMONOFFTIMES; ++k) {
-            mOnTimes[k] = 0;
-            mOffTimes[k] = 0;
-        }
     }
 
     /**
@@ -85,7 +83,9 @@ public class BrewingProgram {
         mName = new String(copyFrom.mName);
         mDescription = new String(copyFrom.mDescription);
         mOnTimes = copyFrom.mOnTimes.clone();
+        mOnTimesAsSeconds = copyFrom.mOnTimesAsSeconds.clone();
         mOffTimes = copyFrom.mOffTimes.clone();
+        mOffTimesAsSeconds = copyFrom.mOffTimesAsSeconds.clone();
         mCreatedAt = new String(copyFrom.mCreatedAt);
         mModifiedAt = new String(copyFrom.mModifiedAt);
         mShortUrl = new String(copyFrom.mShortUrl);
@@ -111,6 +111,8 @@ public class BrewingProgram {
         for (int k = 0; k < NUMONOFFTIMES; ++k) {
             mOnTimes[k] = 0;
             mOffTimes[k] = 0;
+            mOnTimesAsSeconds[k] = 0.f;
+            mOffTimesAsSeconds[k] = 0.f;
         }
     }
 
@@ -176,8 +178,15 @@ public class BrewingProgram {
         return mOnTimes;
     }
 
+    public final Float[] getOnTimesAsSeconds() {
+        return mOnTimesAsSeconds;
+    }
     public final Integer[] getOffTimes() {
         return mOffTimes;
+    }
+
+    public final Float[] getOffTimesAsSeconds() {
+        return mOffTimesAsSeconds;
     }
 
     public boolean setId(String id) {
@@ -211,6 +220,9 @@ public class BrewingProgram {
             onTimes[k] = 0;
         }
         mOnTimes = onTimes.clone();
+        for (int m = 0; m < mOnTimes.length; ++m) {
+            mOnTimesAsSeconds[m] = mOnTimes[m].floatValue() / 10.f;
+        }
         calculateFields();
         return true;
     }
@@ -231,6 +243,9 @@ public class BrewingProgram {
             offTimes[k] = 0;
         }
         mOffTimes = offTimes.clone();
+        for (int m = 0; m < mOffTimes.length; ++m) {
+            mOffTimesAsSeconds[m] = mOffTimes[m].floatValue() / 10.f;
+        }
         calculateFields();
         return true;
     }

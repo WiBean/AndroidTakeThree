@@ -2,13 +2,13 @@
 <pre-dex-items>
 
     <item
-        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\classes-f13e2640720bf2d899c4986c2b0f09ffdbd1bfc8.jar"
-        jar="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\exploded-aar\com.android.support\support-v4\20.0.0\classes.jar"
-        jumboMode="false" revision="19.1.0" sha1="8694693636ab36910c8100ce527c258ff3ebece0" />
-    <item
         dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\android-integration-3.1.0-1287a834787f2738b903d8152a4737b34d486932.jar"
         jar="C:\Users\John-Michael\.gradle\caches\modules-2\files-2.1\com.google.zxing\android-integration\3.1.0\52707c1c0801b4e1c0ca9bdbabd2dae20d8564d7\android-integration-3.1.0.jar"
         jumboMode="false" revision="19.1.0" sha1="52707c1c0801b4e1c0ca9bdbabd2dae20d8564d7" />
+    <item
+        dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\classes-f13e2640720bf2d899c4986c2b0f09ffdbd1bfc8.jar"
+        jar="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\exploded-aar\com.android.support\support-v4\20.0.0\classes.jar"
+        jumboMode="false" revision="19.1.0" sha1="8694693636ab36910c8100ce527c258ff3ebece0" />
     <item
         dex="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\pre-dexed\debug\classes-17b9ce4fa3871333a2057f12296bf9f0e0a268d0.jar"
         jar="C:\Users\John-Michael\Documents\GitHub\WiBeanTakeThree\BrewingPrograms\build\intermediates\exploded-aar\com.google.android.gms\play-services\5.2.08\classes.jar"

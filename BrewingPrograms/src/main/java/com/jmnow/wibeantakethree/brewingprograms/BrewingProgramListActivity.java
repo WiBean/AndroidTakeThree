@@ -228,6 +228,7 @@ public class BrewingProgramListActivity extends Activity
      */
     @Override
     public void onBackPressed() {
+        // clear focus on all the fields so the filters run
         final BrewingProgramDetailFragment fragment = (BrewingProgramDetailFragment) getFragmentManager().findFragmentByTag(TAG_BREWINGPROGRAMDETAIL);
         if (fragment != null) {
             fragment.saveIfNecessary();
@@ -655,11 +656,13 @@ public class BrewingProgramListActivity extends Activity
                     return;
                 }
                 cursor.moveToFirst();
+                BrewingProgram bp = new BrewingProgram("-1", "noname");
                 try {
                     int k = 0;
                     String idAsString = String.valueOf(cursor.getLong(k++));
                     String name = cursor.getString(k++);
-                    BrewingProgram bp = new BrewingProgram(idAsString, name);
+                    bp.setId(idAsString);
+                    bp.setName(name);
                     bp.setDescription(cursor.getString(k++));
                     Integer[] onTimes = new Integer[5];
                     Integer[] offTimes = new Integer[5];
@@ -678,11 +681,17 @@ public class BrewingProgramListActivity extends Activity
                     bp.setShortUrl(cursor.getString(k++));
                     bp.setCreatedAt(cursor.getString(k++));
                     bp.setModifiedAt(cursor.getString(k++));
+                } catch (Exception e) {
+                    System.out.println("CURSOR ERROR: " + e.getLocalizedMessage());
+                    e.printStackTrace();
+                }
+                try {
                     if (acceptor != null) {
                         acceptor.useBrewingProgram(bp);
                     }
                 } catch (Exception e) {
-                    System.out.println("CURSOR ERROR: " + e.getLocalizedMessage());
+                    System.out.println("Acceptor threw exception: " + e.getLocalizedMessage());
+                    e.printStackTrace();
                 }
                 // it has done its job - terminate
                 getLoaderManager().destroyLoader(PROGRAM_DETAIL_LOADER);
@@ -706,7 +715,9 @@ public class BrewingProgramListActivity extends Activity
                 brewProgram(bp);
             }
         });
-    };
+    }
+
+    ;
 
     public boolean saveOrCreateItem(BrewingProgram aProgram) {
         return insertOrUpdateBrewingProgram(aProgram);
@@ -731,7 +742,7 @@ public class BrewingProgramListActivity extends Activity
     /**
      * Google Analytics Tracking
      * Enum used to identify the tracker that needs to be used for tracking.
-     *
+     * <p/>
      * A single tracker is usually enough for most purposes. In case you do need multiple trackers,
      * storing them all in Application object helps ensure that they are created only once per
      * application instance.
@@ -792,6 +803,7 @@ public class BrewingProgramListActivity extends Activity
             }
             return lastRet;
         }
+
         protected void onProgressUpdate(Integer... progress) {
             updateBusyProgress(progress[0]);
         }

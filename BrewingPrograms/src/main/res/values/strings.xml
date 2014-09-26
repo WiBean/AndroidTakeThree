@@ -103,6 +103,7 @@
     <string name="alarm_status_off">Off</string>
     <string name="heading_control_status_updating">Updating</string>
     <string name="cancel">Cancel</string>
+    <string name="word_seconds">seconds</string>
 
 
     <string-array name="simple_timezone_list">
